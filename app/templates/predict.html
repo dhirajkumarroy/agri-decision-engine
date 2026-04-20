@@ -1,0 +1,848 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .tab-btn {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-weight: 600;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    .tab-btn:hover { border-color: #4caf50; color: #2e7d32; }
+    .tab-btn.active {
+        background: #2e7d32;
+        border-color: #2e7d32;
+        color: white;
+        box-shadow: 0 4px 12px rgba(46,125,50,0.3);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .slider-wrapper {
+        background: #f8fff8;
+        border: 1px solid #e8f5e9;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+    .slider-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    .slider-label span { font-weight: 600; font-size: 0.9rem; }
+    .slider-value {
+        background: #2e7d32;
+        color: white;
+        border-radius: 8px;
+        padding: 2px 10px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        min-width: 48px;
+        text-align: center;
+    }
+    .form-range::-webkit-slider-thumb {
+        background: #2e7d32;
+    }
+    .form-range::-webkit-slider-runnable-track {
+        background: #c8e6c9;
+        border-radius: 4px;
+    }
+
+    .result-card {
+        border-radius: 20px;
+        border: none;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .result-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important;
+    }
+
+    .crop-rank {
+        position: absolute;
+        top: 8px; left: 8px;
+        width: 26px; height: 26px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .crop-img-wrap {
+        position: relative;
+        height: 110px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .crop-icon {
+        font-size: 3rem;
+        line-height: 1;
+    }
+
+    .weather-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .weather-tile {
+        background: white;
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+        border: 1px solid #e8f5e9;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .weather-tile i { font-size: 1.6rem; color: #2e7d32; }
+    .weather-tile .val { font-size: 1.3rem; font-weight: 700; color: #1b5e20; margin: 4px 0 2px; }
+    .weather-tile .lbl { font-size: 0.78rem; color: #888; }
+
+    .upload-zone {
+        border: 2px dashed #c8e6c9;
+        border-radius: 16px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #f8fff8;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+        border-color: #2e7d32;
+        background: #e8f5e9;
+    }
+    .upload-zone input[type="file"] {
+        position: absolute;
+        width: 100%; height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        top: 0; left: 0;
+    }
+
+    .irrigation-result {
+        padding: 20px;
+        border-radius: 14px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 700;
+        transition: all 0.3s;
+    }
+    .irrigation-yes { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
+    .irrigation-no { background: #e8f5e9; color: #1b5e20; border: 2px solid #a5d6a7; }
+    .irrigation-waiting { background: #f5f5f5; color: #888; border: 2px solid #e0e0e0; }
+
+    .disease-result-card { border-radius: 20px; overflow: hidden; }
+    .confidence-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e0e0e0;
+        margin-top: 4px;
+    }
+    .confidence-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: #2e7d32;
+    }
+    .conf-high { background: #2e7d32 !important; }
+    .conf-mid  { background: #f57c00 !important; }
+    .conf-low  { background: #c62828 !important; }
+
+    .spinner-border-sm { width: 1rem; height: 1rem; }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-up { animation: slideUp 0.4s ease-out both; }
+
+    .prediction-banner {
+        background: linear-gradient(135deg, #eef9f0, #f8fff8);
+        border: 1px solid #c8e6c9;
+        border-radius: 16px;
+        padding: 16px 18px;
+        margin-top: 18px;
+    }
+</style>
+
+
+<!-- PAGE HEADER -->
+<div class="text-center mb-4">
+    <h2 class="fw-bold text-success">Smart Farm AI</h2>
+    <p class="text-muted">Crop Recommendation · Disease Detection · Irrigation Advisor</p>
+</div>
+
+
+<!-- TABS -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <button class="tab-btn {% if active_tab == 'crop' or not active_tab %}active{% endif %}"
+            onclick="switchTab('crop')">
+        <i class="bi bi-seedling"></i> Crop Recommendation
+    </button>
+    <button class="tab-btn {% if active_tab == 'disease' %}active{% endif %}"
+            onclick="switchTab('disease')">
+        <i class="bi bi-bug"></i> Disease Detection
+    </button>
+    <button class="tab-btn {% if active_tab == 'irrigation' %}active{% endif %}"
+            onclick="switchTab('irrigation')">
+        <i class="bi bi-droplet"></i> Smart Irrigation
+    </button>
+</div>
+
+
+<!-- ============== TAB: CROP ============== -->
+<div id="tab-crop" class="tab-panel {% if active_tab == 'crop' or not active_tab %}active{% endif %}">
+
+    <div class="card shadow-sm p-4">
+        <h5 class="fw-bold mb-4"><i class="bi bi-seedling text-success me-2"></i>Crop Recommendation</h5>
+
+        <form action="/predict" method="post" id="cropForm" onsubmit="showCropLoading()">
+
+            <!-- LOCATION -->
+            <div class="mb-4">
+                <label class="fw-bold mb-1">Location / City</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-geo-alt text-success"></i></span>
+                    <input type="text" name="city" id="cityInput"
+                        class="form-control"
+                        placeholder="Enter city name or detect automatically"
+                        value="{{ result.live_weather.city if result else '' }}"
+                        required>
+                    <button type="button" class="btn btn-outline-success" onclick="getLocation()" id="gpsBtn">
+                        <i class="bi bi-crosshair"></i> Detect GPS
+                    </button>
+                </div>
+            </div>
+
+            <!-- NPK SLIDERS -->
+            <div class="mb-3">
+                <label class="fw-bold mb-2">Soil Nutrients (kg/ha)</label>
+                <div class="row g-3">
+                    {% for label, id, name, min_v, max_v, default, hint in [
+                        ('Nitrogen (N)', 'nValue', 'N', 0, 140, 50, 'kg/ha'),
+                        ('Phosphorus (P)', 'pValue', 'P', 5, 145, 40, 'kg/ha'),
+                        ('Potassium (K)', 'kValue', 'K', 5, 205, 40, 'kg/ha')
+                    ] %}
+                    <div class="col-md-4">
+                        <div class="slider-wrapper">
+                            <div class="slider-label">
+                                <span>{{ label }}</span>
+                                <span class="slider-value" id="{{ id }}">{{ default }}</span>
+                            </div>
+                            <input type="range" min="{{ min_v }}" max="{{ max_v }}" value="{{ default }}"
+                                class="form-range"
+                                name="{{ name }}"
+                                oninput="updateValue('{{ id }}', this.value)">
+                            <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                                <span>{{ min_v }}</span><span>{{ max_v }} {{ hint }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- PH + RAINFALL -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="slider-wrapper">
+                        <div class="slider-label">
+                            <span class="fw-bold">Soil pH</span>
+                            <span class="slider-value" id="phValue">6.5</span>
+                        </div>
+                        <input type="range" min="3.5" max="9.5" step="0.1" value="6.5"
+                            class="form-range" name="ph"
+                            oninput="updateValue('phValue', this.value)">
+                        <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                            <span>3.5 (Acidic)</span><span>9.5 (Alkaline)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="slider-wrapper">
+                        <div class="slider-label">
+                            <span class="fw-bold">Rainfall</span>
+                            <span class="slider-value" id="rainValue">100</span>
+                        </div>
+                        <input type="range" min="20" max="300" value="100"
+                            class="form-range" name="rainfall"
+                            oninput="updateValue('rainValue', this.value)">
+                        <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                            <span>20 mm</span><span>300 mm</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-success w-100 fw-bold py-3" type="submit" id="cropSubmitBtn"
+                    style="border-radius:12px; font-size:1rem;">
+                <i class="bi bi-cpu me-2"></i>Predict Best Crops
+            </button>
+        </form>
+    </div>
+
+    {% if result and result.top_recommendations %}
+    <div class="prediction-banner animate-up" id="cropPredictionSummary">
+        <div class="fw-bold text-success mb-1">
+            <i class="bi bi-check-circle-fill me-2"></i>Prediction Completed
+        </div>
+        <div class="small text-muted">
+            Best match:
+            <strong class="text-dark text-capitalize">{{ result.top_recommendations[0].crop }}</strong>
+            with {{ (result.top_recommendations[0].probability * 100) | round(1) }}% confidence.
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- WEATHER RESULTS -->
+    {% if result and result.live_weather %}
+    <div class="mt-4 animate-up">
+        <h5 class="fw-bold mb-3"><i class="bi bi-cloud-sun text-success me-2"></i>Live Weather — {{ result.live_weather.city }}</h5>
+        <div class="weather-grid">
+            <div class="weather-tile">
+                <i class="bi bi-thermometer-half"></i>
+                <div class="val">{{ result.live_weather.temperature }}°C</div>
+                <div class="lbl">Temperature</div>
+            </div>
+            <div class="weather-tile">
+                <i class="bi bi-moisture"></i>
+                <div class="val">{{ result.live_weather.humidity }}%</div>
+                <div class="lbl">Humidity</div>
+            </div>
+            <div class="weather-tile">
+                <i class="bi bi-cloud-rain"></i>
+                <div class="val">{{ result.live_weather.get('rainfall', 0) }} mm</div>
+                <div class="lbl">Rainfall</div>
+            </div>
+            {% if result.live_weather.get('wind_speed') %}
+            <div class="weather-tile">
+                <i class="bi bi-wind"></i>
+                <div class="val">{{ result.live_weather.wind_speed }} m/s</div>
+                <div class="lbl">Wind Speed</div>
+            </div>
+            {% endif %}
+            {% if result.live_weather.get('description') %}
+            <div class="weather-tile">
+                <i class="bi bi-info-circle"></i>
+                <div class="val" style="font-size:0.85rem;">{{ result.live_weather.description }}</div>
+                <div class="lbl">Condition</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- CROP RESULTS -->
+    {% if result and result.top_recommendations %}
+    <div class="mt-2 animate-up">
+        <h5 class="fw-bold mb-3"><i class="bi bi-trophy text-success me-2"></i>Top Crop Recommendations</h5>
+        <div class="row g-3">
+            {% for crop in result.top_recommendations %}
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card result-card shadow-sm text-center">
+                    <div class="crop-img-wrap">
+                        <div class="crop-rank">#{{ loop.index }}</div>
+                        <div class="crop-icon">
+                            {% set c = crop.crop | lower %}
+                            {% if 'rice' in c %}🌾
+                            {% elif 'wheat' in c %}🌾
+                            {% elif 'maize' in c or 'corn' in c %}🌽
+                            {% elif 'apple' in c %}🍎
+                            {% elif 'banana' in c %}🍌
+                            {% elif 'mango' in c %}🥭
+                            {% elif 'grape' in c %}🍇
+                            {% elif 'orange' in c %}🍊
+                            {% elif 'papaya' in c %}🧡
+                            {% elif 'pomegranate' in c %}🍎
+                            {% elif 'watermelon' in c %}🍉
+                            {% elif 'muskmelon' in c %}🍈
+                            {% elif 'cotton' in c %}🌿
+                            {% elif 'sugarcane' in c %}🎋
+                            {% elif 'coffee' in c %}☕
+                            {% elif 'coconut' in c %}🥥
+                            {% elif 'jute' in c %}🌿
+                            {% elif 'lentil' in c %}🫘
+                            {% elif 'chickpea' in c %}🫘
+                            {% elif 'kidney' in c or 'mothbean' in c or 'mungbean' in c or 'blackgram' in c or 'pigeonpea' in c %}🫘
+                            {% else %}🌱
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="p-2">
+                        <h6 class="fw-bold mb-1 text-capitalize" style="font-size:0.9rem;">{{ crop.crop }}</h6>
+                        <span class="badge bg-success" style="font-size:0.8rem;">
+                            {{ (crop.probability * 100) | round(1) }}%
+                        </span>
+                        <div class="confidence-bar mt-2">
+                            <div class="confidence-fill" data-pct="{{ (crop.probability * 100) | round(0) | int }}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- ============== TAB: DISEASE ============== -->
+<div id="tab-disease" class="tab-panel {% if active_tab == 'disease' %}active{% endif %}">
+
+    <div class="card shadow-sm p-4">
+        <h5 class="fw-bold mb-1"><i class="bi bi-bug text-danger me-2"></i>Plant Disease Detection</h5>
+        <p class="text-muted small mb-4">Upload a clear image of the affected leaf for AI diagnosis.</p>
+
+        <form action="/predict-disease" method="post" enctype="multipart/form-data"
+              onsubmit="showDiseaseLoading()">
+
+            <div class="upload-zone position-relative mb-3" id="uploadZone">
+                <input type="file" name="file" id="fileInput" accept="image/*"
+                       onchange="previewImage(this)" required>
+                <div id="uploadPrompt">
+                    <i class="bi bi-cloud-upload text-success" style="font-size:2.5rem;"></i>
+                    <p class="fw-bold mt-2 mb-1">Click to upload or drag & drop</p>
+                    <p class="text-muted small mb-0">Supports JPG, PNG, WebP</p>
+                </div>
+                <img id="preview" class="img-fluid rounded d-none" style="max-height:200px; object-fit:contain;">
+            </div>
+
+            <button class="btn btn-danger w-100 fw-bold py-3" type="submit" id="diseaseSubmitBtn"
+                    style="border-radius:12px; font-size:1rem;">
+                <i class="bi bi-search me-2"></i>Detect Disease
+            </button>
+        </form>
+    </div>
+
+
+    <!-- DISEASE RESULTS -->
+    {% if disease_result %}
+    <div class="mt-4 animate-up">
+        <div class="card shadow disease-result-card
+            {% if disease_result.is_healthy %}border-success{% else %}border-danger{% endif %}"
+            style="border-width:2px !important;">
+
+            <div class="p-4">
+                {% if disease_result.is_healthy %}
+                <div class="text-center mb-4">
+                    <div style="font-size:3rem;">✅</div>
+                    <h3 class="fw-bold text-success mt-2">Plant is Healthy!</h3>
+                    <p class="text-muted">No disease detected. Continue good agronomic practices.</p>
+                </div>
+                {% else %}
+                <div class="text-center mb-4">
+                    <div style="font-size:3rem;">🦠</div>
+                    <h3 class="fw-bold text-danger mt-2">Disease Detected</h3>
+                    <h5 class="text-dark">{{ disease_result.disease }}</h5>
+                </div>
+                {% endif %}
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#f8f9fa;">
+                            <small class="text-muted fw-bold d-block mb-1">CONFIDENCE</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="fw-bold fs-4">{{ disease_result.confidence }}%</div>
+                                <div class="flex-grow-1">
+                                    <div class="confidence-bar">
+                                        <div class="confidence-fill
+                                            {% if disease_result.confidence > 80 %}conf-high{% elif disease_result.confidence > 60 %}conf-mid{% else %}conf-low{% endif %}"
+                                            data-pct="{{ disease_result.confidence | int }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#f8f9fa;">
+                            <small class="text-muted fw-bold d-block mb-1">STATUS</small>
+                            <span class="badge {% if disease_result.is_healthy %}bg-success{% else %}bg-danger{% endif %} py-2 px-3" style="font-size:0.9rem;">
+                                {% if disease_result.is_healthy %}Healthy{% else %}Diseased{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if not disease_result.is_healthy %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#fff8e1; border:1px solid #ffe082;">
+                            <p class="fw-bold mb-1"><i class="bi bi-capsule text-warning me-1"></i>Treatment</p>
+                            <p class="mb-0 small">{{ disease_result.treatment }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded" style="background:#e8f5e9; border:1px solid #a5d6a7;">
+                            <p class="fw-bold mb-1"><i class="bi bi-shield-check text-success me-1"></i>Prevention</p>
+                            <p class="mb-0 small">{{ disease_result.prevention }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if disease_result.top3 %}
+                <div class="mt-3">
+                    <p class="fw-bold text-muted small mb-2">TOP 3 PREDICTIONS</p>
+                    {% for item in disease_result.top3 %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">{{ item.disease }}</small>
+                        <small class="fw-bold">{{ item.confidence }}%</small>
+                    </div>
+                    <div class="confidence-bar mb-2" style="height:5px;">
+                        <div class="confidence-fill" data-pct="{{ item.confidence | int }}" style="height:100%;"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- ============== TAB: IRRIGATION ============== -->
+<div id="tab-irrigation" class="tab-panel {% if active_tab == 'irrigation' %}active{% endif %}">
+
+    <div class="card shadow-sm p-4">
+        <h5 class="fw-bold mb-1"><i class="bi bi-droplet text-primary me-2"></i>Smart Irrigation Advisor</h5>
+        <p class="text-muted small mb-4">Enter current field conditions to get an irrigation recommendation.</p>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="slider-wrapper">
+                    <div class="slider-label">
+                        <span class="fw-bold">Soil Moisture</span>
+                        <span class="slider-value" id="moistureVal" style="background:#0277bd;">50</span>
+                    </div>
+                    <input type="range" min="0" max="100" value="50" class="form-range"
+                        id="moistureSlider"
+                        oninput="updateValue('moistureVal', this.value)"
+                        style="accent-color:#0277bd;">
+                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                        <span>0% (Dry)</span><span>100% (Wet)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="slider-wrapper">
+                    <div class="slider-label">
+                        <span class="fw-bold">Temperature</span>
+                        <span class="slider-value" id="tempVal" style="background:#e65100;">25</span>
+                    </div>
+                    <input type="range" min="5" max="50" value="25" class="form-range"
+                        id="tempSlider"
+                        oninput="updateValue('tempVal', this.value)"
+                        style="accent-color:#e65100;">
+                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                        <span>5°C</span><span>50°C</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="slider-wrapper">
+                    <div class="slider-label">
+                        <span class="fw-bold">Humidity</span>
+                        <span class="slider-value" id="humidityVal" style="background:#00838f;">60</span>
+                    </div>
+                    <input type="range" min="0" max="100" value="60" class="form-range"
+                        id="humiditySlider"
+                        oninput="updateValue('humidityVal', this.value)"
+                        style="accent-color:#00838f;">
+                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                        <span>0%</span><span>100%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="slider-wrapper">
+                    <div class="slider-label">
+                        <span class="fw-bold">Rainfall</span>
+                        <span class="slider-value" id="rainVal" style="background:#546e7a;">0</span>
+                    </div>
+                    <input type="range" min="0" max="100" value="0" class="form-range"
+                        id="rainSlider"
+                        oninput="updateValue('rainVal', this.value)"
+                        style="accent-color:#546e7a;">
+                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#aaa;">
+                        <span>0 mm</span><span>100 mm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="irrigationCropType" class="form-label fw-semibold">Crop Type</label>
+                <select id="irrigationCropType" class="form-select py-3" style="border-radius:12px;">
+                    <option value="Rice">Rice</option>
+                    <option value="Wheat">Wheat</option>
+                    <option value="Maize">Maize</option>
+                    <option value="Cotton">Cotton</option>
+                    <option value="Potato">Potato</option>
+                    <option value="Sugarcane">Sugarcane</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="irrigationGrowthStage" class="form-label fw-semibold">Growth Stage</label>
+                <select id="irrigationGrowthStage" class="form-select py-3" style="border-radius:12px;">
+                    <option value="Sowing">Sowing</option>
+                    <option value="Vegetative">Vegetative</option>
+                    <option value="Flowering">Flowering</option>
+                    <option value="Harvest">Harvest</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-primary w-100 fw-bold py-3" onclick="checkIrrigation()" id="irrigBtn"
+                style="border-radius:12px; font-size:1rem;">
+            <i class="bi bi-droplet-fill me-2"></i>Check Irrigation Need
+        </button>
+
+        <div class="mt-4" id="irrigationResult">
+            <div class="irrigation-result irrigation-waiting">
+                <i class="bi bi-hourglass-split me-2"></i>Waiting for your input...
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- ERROR DISPLAY -->
+{% if error %}
+<div class="alert alert-danger mt-4 d-flex align-items-center gap-2" role="alert" style="border-radius:12px;">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span>{{ error }}</span>
+</div>
+{% endif %}
+
+{% if result and result.top_recommendations %}
+<script id="cropTrackingData" type="application/json">
+{{ {
+    "type": "crop",
+    "input": {
+        "city": result.live_weather.get('city', '') if result.live_weather else '',
+        "temperature": result.live_weather.get('temperature') if result.live_weather else None,
+        "humidity": result.live_weather.get('humidity') if result.live_weather else None,
+        "rainfall": result.live_weather.get('rainfall', 0) if result.live_weather else None
+    },
+    "result": result
+} | tojson }}
+</script>
+{% endif %}
+
+{% if disease_result %}
+<script id="diseaseTrackingData" type="application/json">
+{{ {
+    "type": "disease",
+    "input": {},
+    "result": disease_result
+} | tojson }}
+</script>
+{% endif %}
+
+
+<script>
+// ====== APPLY DATA-PCT WIDTHS ======
+document.querySelectorAll('[data-pct]').forEach(el => {
+    el.style.width = el.dataset.pct + '%';
+});
+
+window.addEventListener('load', () => {
+    const summary = document.getElementById('cropPredictionSummary');
+    if (summary) {
+        summary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    trackPredictionResult();
+});
+
+// ====== TAB SWITCHING ======
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ====== SLIDER VALUES ======
+function updateValue(id, val) {
+    document.getElementById(id).innerText = val;
+}
+
+async function trackPredictionResult() {
+    if (window.location.port !== '3000') return;
+
+    const scriptEl =
+        document.getElementById('cropTrackingData') ||
+        document.getElementById('diseaseTrackingData');
+
+    if (!scriptEl) return;
+
+    try {
+        const payload = JSON.parse(scriptEl.textContent);
+        const signature = `prediction-track:${payload.type}:${JSON.stringify(payload.result)}`;
+        if (sessionStorage.getItem(signature)) return;
+
+        const token = localStorage.getItem('cropToken') || '';
+        await fetch('/api/predictions/track', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: 'Bearer ' + token } : {})
+            },
+            body: JSON.stringify(payload)
+        });
+
+        sessionStorage.setItem(signature, '1');
+    } catch {}
+}
+
+// ====== GPS LOCATION ======
+function getLocation() {
+    const btn = document.getElementById('gpsBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Detecting...';
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+        async pos => {
+            try {
+                const res = await fetch(`/api/live-weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+                const data = await res.json();
+                if (data.city) {
+                    document.getElementById('cityInput').value = data.city;
+                    btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>' + data.city;
+                    btn.classList.replace('btn-outline-success', 'btn-success');
+                } else {
+                    btn.innerHTML = '<i class="bi bi-crosshair"></i> Detect GPS';
+                }
+            } catch {
+                btn.innerHTML = '<i class="bi bi-crosshair"></i> Detect GPS';
+            }
+            btn.disabled = false;
+        },
+        () => {
+            btn.innerHTML = '<i class="bi bi-crosshair"></i> Detect GPS';
+            btn.disabled = false;
+        }
+    );
+}
+
+// ====== IMAGE PREVIEW ======
+function previewImage(input) {
+    const preview = document.getElementById('preview');
+    const prompt = document.getElementById('uploadPrompt');
+    const zone = document.getElementById('uploadZone');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+            prompt.classList.add('d-none');
+            zone.style.padding = '16px';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+if (zone) {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const fileInput = document.getElementById('fileInput');
+        fileInput.files = e.dataTransfer.files;
+        previewImage(fileInput);
+    });
+}
+
+// ====== LOADING STATES ======
+function showCropLoading() {
+    const btn = document.getElementById('cropSubmitBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analyzing...';
+    btn.disabled = true;
+}
+
+function showDiseaseLoading() {
+    const btn = document.getElementById('diseaseSubmitBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Detecting...';
+    btn.disabled = true;
+}
+
+// ====== IRRIGATION API ======
+async function checkIrrigation() {
+    const btn = document.getElementById('irrigBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Checking...';
+    btn.disabled = true;
+    const endpoint = window.location.port === '3000'
+        ? '/api/predict/irrigation'
+        : '/predict-irrigation';
+
+    const data = {
+        soil_moisture: parseFloat(document.getElementById('moistureSlider').value),
+        temperature: parseFloat(document.getElementById('tempSlider').value),
+        humidity: parseFloat(document.getElementById('humiditySlider').value),
+        rain: parseFloat(document.getElementById('rainSlider').value),
+        crop_type: document.getElementById('irrigationCropType').value,
+        growth_stage: document.getElementById('irrigationGrowthStage').value
+    };
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const response = await res.json();
+        const result = response.data || response;
+        const el = document.getElementById('irrigationResult');
+
+        if (!res.ok) {
+            const errorMessage = result.error?.message || result.error || 'Unable to get irrigation prediction.';
+            el.innerHTML = `<div class="irrigation-result irrigation-waiting">
+                <i class="bi bi-exclamation-triangle me-2"></i>${errorMessage}</div>`;
+        } else if (result.irrigation === 'yes' || result.irrigation === 1) {
+            el.innerHTML = `<div class="irrigation-result irrigation-yes">
+                <i class="bi bi-droplet-fill me-2"></i>Irrigation Required!
+                <p class="mt-2 mb-0" style="font-size:0.9rem; font-weight:400;">
+                Soil moisture is low. Water your crops to prevent stress.</p></div>`;
+        } else {
+            el.innerHTML = `<div class="irrigation-result irrigation-no">
+                <i class="bi bi-check-circle-fill me-2"></i>No Irrigation Needed
+                <p class="mt-2 mb-0" style="font-size:0.9rem; font-weight:400;">
+                Soil moisture is adequate. No watering required right now.</p></div>`;
+        }
+    } catch {
+        document.getElementById('irrigationResult').innerHTML = `
+            <div class="irrigation-result irrigation-waiting">
+            <i class="bi bi-exclamation-triangle me-2"></i>Unable to connect. Check server logs.</div>`;
+    }
+
+    btn.innerHTML = '<i class="bi bi-droplet-fill me-2"></i>Check Irrigation Need';
+    btn.disabled = false;
+}
+</script>
+
+{% endblock %}

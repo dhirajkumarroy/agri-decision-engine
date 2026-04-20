@@ -1,0 +1,547 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .kpi-card {
+        border-radius: 18px;
+        padding: 20px 24px;
+        background: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    .kpi-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important;
+    }
+    .kpi-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 12px;
+    }
+    .kpi-val {
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #1b5e20;
+        line-height: 1;
+    }
+    .kpi-label {
+        font-size: 0.82rem;
+        color: #888;
+        margin-top: 4px;
+    }
+
+    .section-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-left: 4px solid #2e7d32;
+        padding-left: 12px;
+        margin: 32px 0 16px;
+    }
+
+    .chart-card {
+        border-radius: 18px;
+        border: none;
+        transition: 0.2s;
+    }
+    .chart-card:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    .search-bar {
+        background: white;
+        border-radius: 14px;
+        padding: 20px 24px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    .forecast-item {
+        background: white;
+        border-radius: 12px;
+        padding: 14px 10px;
+        text-align: center;
+        border: 1px solid #e8f5e9;
+        transition: 0.2s;
+    }
+    .forecast-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 14px rgba(46,125,50,0.1);
+    }
+    .forecast-date { font-size: 0.78rem; color: #888; }
+    .forecast-temp { font-size: 1.1rem; font-weight: 700; color: #2e7d32; }
+    .forecast-rain { font-size: 0.82rem; color: #0277bd; }
+
+    .status-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        background: #4caf50;
+        animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.3); }
+    }
+</style>
+
+
+<!-- PAGE HEADER -->
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold text-success mb-1">Smart Farming Dashboard</h2>
+        <p class="text-muted mb-0">
+            <span class="status-dot me-1"></span>
+            Live weather data &amp; agricultural insights
+        </p>
+    </div>
+    <a href="/predict" class="btn btn-success fw-bold" style="border-radius:10px;">
+        <i class="bi bi-lightning-charge-fill me-1"></i>Go to Predict
+    </a>
+</div>
+
+<!-- WEATHER ALERT -->
+<div id="weatherAlert" class="alert alert-warning d-flex align-items-center gap-2" style="display:none !important; border-radius:12px;">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span id="weatherAlertText"></span>
+</div>
+
+<!-- CITY SEARCH -->
+<div class="search-bar mb-4">
+    <div class="row g-2 align-items-center">
+        <div class="col">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="cityInput" placeholder="Search city for weather data..."
+                    class="form-control border-start-0 ps-0"
+                    onkeydown="if(event.key==='Enter') getWeatherByCity()">
+            </div>
+        </div>
+        <div class="col-auto">
+            <button onclick="getWeatherByCity()" class="btn btn-success fw-bold px-4" style="border-radius:8px;">
+                <i class="bi bi-cloud-sun me-1"></i>Get Weather
+            </button>
+        </div>
+        <div class="col-auto">
+            <button onclick="getUserLocation()" class="btn btn-outline-success fw-bold px-3" id="gpsBtn" style="border-radius:8px;">
+                <i class="bi bi-crosshair me-1"></i>GPS
+            </button>
+        </div>
+    </div>
+    <div id="lastUpdate" class="text-muted mt-2" style="font-size:0.8rem; display:none;">
+        <i class="bi bi-clock me-1"></i><span id="lastUpdateText"></span>
+    </div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="row g-3 mb-2">
+    <div class="col-6 col-md-3">
+        <div class="kpi-card shadow-sm">
+            <div class="kpi-icon" style="background:#e8f5e9;">
+                <i class="bi bi-thermometer-half text-success"></i>
+            </div>
+            <div class="kpi-val" id="tempValue">--</div>
+            <div class="kpi-label">Temperature</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card shadow-sm">
+            <div class="kpi-icon" style="background:#e3f2fd;">
+                <i class="bi bi-moisture" style="color:#1976d2;"></i>
+            </div>
+            <div class="kpi-val" id="humidityValue" style="color:#1565c0;">--</div>
+            <div class="kpi-label">Humidity</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card shadow-sm">
+            <div class="kpi-icon" style="background:#e1f5fe;">
+                <i class="bi bi-cloud-rain-heavy" style="color:#0277bd;"></i>
+            </div>
+            <div class="kpi-val" id="rainValue" style="color:#01579b;">--</div>
+            <div class="kpi-label">Rainfall (1h)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card shadow-sm">
+            <div class="kpi-icon" style="background:#fff3e0;">
+                <i class="bi bi-wind" style="color:#e65100;"></i>
+            </div>
+            <div class="kpi-val" id="windValue" style="color:#bf360c;">--</div>
+            <div class="kpi-label">Wind Speed</div>
+        </div>
+    </div>
+</div>
+
+<!-- LOCATION + CONDITION -->
+<div class="row g-3 mb-2">
+    <div class="col-md-6">
+        <div class="kpi-card shadow-sm d-flex align-items-center gap-3">
+            <div class="kpi-icon mb-0" style="background:#f3e5f5;">
+                <i class="bi bi-geo-alt-fill" style="color:#7b1fa2;"></i>
+            </div>
+            <div>
+                <div class="kpi-val" id="cityValue" style="color:#4a148c; font-size:1.2rem;">--</div>
+                <div class="kpi-label">Location</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="kpi-card shadow-sm d-flex align-items-center gap-3">
+            <div class="kpi-icon mb-0" style="background:#e8f5e9;">
+                <i class="bi bi-cloud-sun text-success"></i>
+            </div>
+            <div>
+                <div class="kpi-val" id="descValue" style="font-size:1rem; font-weight:600; color:#333;">--</div>
+                <div class="kpi-label">Condition</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- WEATHER CHARTS -->
+<h3 class="section-title">Weather Overview</h3>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card chart-card shadow-sm p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-radar text-success me-2"></i>Weather Radar</h6>
+            <canvas id="dashWeather" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card chart-card shadow-sm p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-graph-up text-success me-2"></i>Temperature History</h6>
+            <canvas id="tempTrend" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+
+<!-- FORECAST -->
+<h3 class="section-title">7-Day Forecast</h3>
+<div id="forecastContainer" class="row g-2 mb-4" style="display:none !important;">
+</div>
+<div id="forecastCharts" class="row g-3" style="display:none !important;">
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-thermometer text-danger me-2"></i>Temperature Forecast</h6>
+            <canvas id="forecastTemp" height="180"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-cloud-rain text-primary me-2"></i>Rainfall Prediction</h6>
+            <canvas id="forecastRain" height="180"></canvas>
+        </div>
+    </div>
+</div>
+<div id="forecastPlaceholder" class="card shadow-sm p-4 text-center text-muted mb-4">
+    <i class="bi bi-calendar3 mb-2" style="font-size:2rem;"></i>
+    <p class="mb-0">Search a city or use GPS to load the 7-day forecast</p>
+</div>
+
+<!-- CROP ANALYTICS -->
+<h3 class="section-title">Crop Suitability Analytics</h3>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart text-success me-2"></i>Crop Suitability Distribution</h6>
+            <canvas id="cropPie" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart text-success me-2"></i>Crop Demand Index</h6>
+            <canvas id="cropBar" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+
+<script>
+const GREEN = '#2e7d32';
+const chartDefaults = {
+    plugins: { legend: { labels: { font: { family: 'Inter', size: 12 } } } },
+    scales: { x: { grid: { display: false } }, y: { grid: { color: '#f0f0f0' } } }
+};
+
+/* ====== WEATHER RADAR ====== */
+const weatherChart = new Chart(document.getElementById('dashWeather'), {
+    type: 'radar',
+    data: {
+        labels: ['Temperature', 'Humidity', 'Rainfall', 'Wind Speed'],
+        datasets: [{
+            label: 'Current Conditions',
+            data: [0, 0, 0, 0],
+            borderColor: GREEN,
+            backgroundColor: 'rgba(46,125,50,0.2)',
+            pointBackgroundColor: GREEN,
+            pointRadius: 4
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: { r: { suggestedMin: 0, ticks: { display: false }, grid: { color: '#e8f5e9' } } }
+    }
+});
+
+/* ====== TEMP TREND ====== */
+const tempChart = new Chart(document.getElementById('tempTrend'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Temperature °C',
+            data: [],
+            borderColor: '#4caf50',
+            backgroundColor: 'rgba(76,175,80,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: GREEN
+        }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+});
+
+/* ====== FORECAST CHARTS ====== */
+const forecastTempChart = new Chart(document.getElementById('forecastTemp'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Temp °C',
+            data: [],
+            borderColor: '#ef5350',
+            backgroundColor: 'rgba(239,83,80,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#ef5350'
+        }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+});
+
+const forecastRainChart = new Chart(document.getElementById('forecastRain'), {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Rainfall mm',
+            data: [],
+            backgroundColor: 'rgba(33,150,243,0.7)',
+            borderRadius: 6
+        }]
+    },
+    options: { ...chartDefaults, plugins: { legend: { display: false } } }
+});
+
+/* ====== CROP CHARTS ====== */
+new Chart(document.getElementById('cropPie'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Rice', 'Wheat', 'Maize', 'Cotton', 'Sugarcane'],
+        datasets: [{
+            data: [28, 22, 18, 16, 16],
+            backgroundColor: ['#2e7d32', '#4caf50', '#81c784', '#a5d6a7', '#c8e6c9'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        plugins: {
+            legend: { position: 'right', labels: { font: { family: 'Inter', size: 11 } } }
+        },
+        cutout: '55%'
+    }
+});
+
+new Chart(document.getElementById('cropBar'), {
+    type: 'bar',
+    data: {
+        labels: ['Rice', 'Wheat', 'Maize', 'Cotton', 'Sugarcane', 'Millet'],
+        datasets: [{
+            label: 'Suitability Score',
+            data: [82, 71, 68, 55, 74, 60],
+            backgroundColor: ['#2e7d32', '#388e3c', '#43a047', '#4caf50', '#66bb6a', '#81c784'],
+            borderRadius: 8
+        }]
+    },
+    options: {
+        ...chartDefaults,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false } },
+            y: { max: 100, grid: { color: '#f0f0f0' }, ticks: { callback: v => v + '%' } }
+        }
+    }
+});
+
+/* ====== UPDATE DASHBOARD ====== */
+let queryCount = 0;
+
+function updateDashboard(data) {
+    if (data.error) {
+        showAlert('danger', 'Error: ' + data.error);
+        return;
+    }
+
+    document.getElementById('tempValue').innerText = data.temperature + '°C';
+    document.getElementById('humidityValue').innerText = data.humidity + '%';
+    document.getElementById('rainValue').innerText = data.rainfall + ' mm';
+    document.getElementById('windValue').innerText = (data.wind_speed || 0) + ' m/s';
+    document.getElementById('cityValue').innerText = data.city || 'Unknown';
+    document.getElementById('descValue').innerText = data.description || '--';
+
+    // Update weather alert
+    if (data.temperature > 40) {
+        showAlert('warning', '⚠️ Extreme heat warning! Temp above 40°C. Increase irrigation frequency.');
+    } else if (data.temperature < 5) {
+        showAlert('info', '❄️ Cold weather alert! Protect frost-sensitive crops.');
+    } else if (data.humidity > 90) {
+        showAlert('warning', '💧 Very high humidity. Risk of fungal diseases — monitor closely.');
+    } else {
+        hideAlert();
+    }
+
+    // Radar chart — normalise values
+    weatherChart.data.datasets[0].data = [
+        Math.min(data.temperature, 50),
+        data.humidity,
+        Math.min(data.rainfall * 10, 100),
+        Math.min((data.wind_speed || 0) * 5, 100)
+    ];
+    weatherChart.update();
+
+    // Temp trend
+    const now = new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' });
+    queryCount++;
+    if (tempChart.data.labels.length >= 10) {
+        tempChart.data.labels.shift();
+        tempChart.data.datasets[0].data.shift();
+    }
+    tempChart.data.labels.push(now);
+    tempChart.data.datasets[0].data.push(data.temperature);
+    tempChart.update();
+
+    // Last update
+    const lu = document.getElementById('lastUpdate');
+    lu.style.display = 'block';
+    document.getElementById('lastUpdateText').innerText = 'Last updated: ' + now;
+}
+
+/* ====== ALERT HELPERS ====== */
+function showAlert(type, msg) {
+    const el = document.getElementById('weatherAlert');
+    el.className = `alert alert-${type} d-flex align-items-center gap-2`;
+    el.style.cssText = 'border-radius:12px;';
+    document.getElementById('weatherAlertText').innerText = msg;
+    el.style.display = 'flex';
+}
+function hideAlert() {
+    document.getElementById('weatherAlert').style.display = 'none';
+}
+
+/* ====== FORECAST ====== */
+function renderForecast(forecastData) {
+    if (!forecastData || !forecastData.length) return;
+
+    // Show elements
+    document.getElementById('forecastPlaceholder').style.display = 'none';
+    document.getElementById('forecastContainer').style.cssText = '';
+    document.getElementById('forecastCharts').style.cssText = '';
+
+    // Forecast pills
+    const container = document.getElementById('forecastContainer');
+    container.innerHTML = '';
+    const unique = [];
+    forecastData.forEach(d => {
+        if (!unique.find(u => u.date === d.date)) unique.push(d);
+    });
+    unique.slice(0, 7).forEach(d => {
+        const day = new Date(d.date).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+        container.innerHTML += `
+            <div class="col">
+                <div class="forecast-item">
+                    <div class="forecast-date">${day}</div>
+                    <i class="bi bi-thermometer-half text-danger my-1"></i>
+                    <div class="forecast-temp">${d.temperature}°C</div>
+                    <div class="forecast-rain"><i class="bi bi-droplet-fill me-1"></i>${d.rain}mm</div>
+                </div>
+            </div>`;
+    });
+
+    // Chart data
+    const labels = unique.map(d => new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+    const temps = unique.map(d => d.temperature);
+    const rain = unique.map(d => d.rain);
+
+    forecastTempChart.data.labels = labels;
+    forecastTempChart.data.datasets[0].data = temps;
+    forecastTempChart.update();
+
+    forecastRainChart.data.labels = labels;
+    forecastRainChart.data.datasets[0].data = rain;
+    forecastRainChart.update();
+}
+
+/* ====== GPS ====== */
+function getUserLocation() {
+    const btn = document.getElementById('gpsBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+    btn.disabled = true;
+
+    if (!navigator.geolocation) {
+        btn.innerHTML = '<i class="bi bi-crosshair me-1"></i>GPS';
+        btn.disabled = false;
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+            const [weatherRes, forecastRes] = await Promise.all([
+                fetch(`/api/live-weather?lat=${lat}&lon=${lon}`),
+                fetch(`/api/forecast?lat=${lat}&lon=${lon}`)
+            ]);
+            const weather = await weatherRes.json();
+            const forecast = await forecastRes.json();
+            updateDashboard(weather);
+            if (forecast.forecast) renderForecast(forecast.forecast);
+            if (weather.city) document.getElementById('cityInput').value = weather.city;
+        } catch {
+            showAlert('danger', 'Unable to fetch weather data. Check your connection.');
+        }
+        btn.innerHTML = '<i class="bi bi-crosshair me-1"></i>GPS';
+        btn.disabled = false;
+    }, () => {
+        showAlert('warning', 'Location access denied. Please enter a city manually.');
+        btn.innerHTML = '<i class="bi bi-crosshair me-1"></i>GPS';
+        btn.disabled = false;
+    });
+}
+
+/* ====== CITY SEARCH ====== */
+async function getWeatherByCity() {
+    const city = document.getElementById('cityInput').value.trim();
+    if (!city) { showAlert('warning', 'Please enter a city name.'); return; }
+
+    try {
+        const res = await fetch(`/api/weather-by-city?city=${encodeURIComponent(city)}`);
+        const data = await res.json();
+        updateDashboard(data);
+    } catch {
+        showAlert('danger', 'Unable to fetch weather data. Check server status.');
+    }
+}
+
+// Load on page start via GPS
+getUserLocation();
+</script>
+
+{% endblock %}

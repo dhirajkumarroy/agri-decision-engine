@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+scikit-learn
+joblib
+tensorflow
+pillow
+python-dotenv
+python-multipart
+requests
+jinja2

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title if title else "Farmpilot AI" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root { --primary:#2e7d32; --primary-light:#4caf50; --primary-pale:#e8f5e9; }
+        body { background:linear-gradient(150deg,#e8f5e9,#f4fff6); font-family:'Inter',sans-serif; min-height:100vh; display:flex; flex-direction:column; animation:fadeIn .6s ease; }
+        main { flex:1; }
+        .bg-circle { position:fixed; border-radius:50%; z-index:-1; animation:float 10s infinite ease-in-out; pointer-events:none; }
+        .bg-circle:nth-child(1) { width:300px;height:300px;background:rgba(76,175,80,.07);top:-80px;left:-80px; }
+        .bg-circle:nth-child(2) { width:200px;height:200px;background:rgba(46,125,50,.06);top:40%;right:-60px;animation-delay:3s; }
+        .bg-circle:nth-child(3) { width:250px;height:250px;background:rgba(76,175,80,.05);bottom:10%;left:5%;animation-delay:6s; }
+        @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-25px) scale(1.03)} }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+        .nav-custom { background:rgba(30,100,34,.92); backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,.1); }
+        .navbar-brand { font-size:1.25rem; letter-spacing:-.3px; }
+        .nav-link { position:relative;padding:.5rem .8rem !important;color:rgba(255,255,255,.8) !important;transition:color .2s;font-weight:500;font-size:.9rem;border-radius:8px; }
+        .nav-link:hover,.nav-link.active { color:#fff !important;background:rgba(255,255,255,.1); }
+
+        /* notification bell */
+        .notif-bell { position:relative;cursor:pointer; }
+        .notif-count { position:absolute;top:-4px;right:-6px;background:#e53935;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;display:none; }
+        .notif-dropdown { width:360px;max-height:400px;overflow-y:auto;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.15); }
+        .notif-item { padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .15s; }
+        .notif-item:hover { background:#f9f9f9; }
+        .notif-item.unread { background:#f0fdf4; }
+        .notif-item:last-child { border-bottom:none; }
+
+        .card { border:none;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07); }
+        .btn-success { background:var(--primary);border-color:var(--primary); }
+        .btn-success:hover { background:#1b5e20;border-color:#1b5e20; }
+
+        footer { background:rgba(30,100,34,.92);color:rgba(255,255,255,.75);padding:2rem 0 1.5rem;margin-top:4rem;font-size:.9rem; }
+        footer a { color:rgba(255,255,255,.7);text-decoration:none; }
+        footer a:hover { color:#fff; }
+        footer .footer-logo { font-size:1.15rem;font-weight:700;color:#fff; }
+        footer hr { border-color:rgba(255,255,255,.15); }
+        .page-wrapper { animation:fadeIn .5s ease-in-out; }
+
+        /* auth modal */
+        .auth-tab-btn { border:none;background:none;padding:10px 24px;font-weight:600;color:#888;border-bottom:2px solid transparent;transition:.2s; }
+        .auth-tab-btn.active { color:var(--primary);border-bottom-color:var(--primary); }
+        .auth-form-input { border-radius:10px;border:2px solid #e0e0e0;padding:10px 14px;transition:.2s; }
+        .auth-form-input:focus { border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,50,.12); }
+
+        /* toast */
+        #toastStack { position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px; }
+        .toast-item { background:#fff;border-radius:12px;padding:12px 18px;box-shadow:0 6px 24px rgba(0,0,0,.13);display:flex;align-items:center;gap:10px;min-width:260px;animation:slideToast .3s ease; }
+        @keyframes slideToast { from{opacity:0;transform:translateX(60px)} to{opacity:1;transform:translateX(0)} }
+    </style>
+</head>
+<body>
+
+<div class="bg-circle"></div>
+<div class="bg-circle"></div>
+<div class="bg-circle"></div>
+
+<!-- Toast stack -->
+<div id="toastStack"></div>
+
+<!-- ═══════ NAVBAR ═══════ -->
+<nav class="navbar navbar-expand-lg navbar-dark nav-custom shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-leaf-fill me-2" style="color:#81c784 !important;"></i>Farmpilot AI
+        </a>
+        <button class="navbar-toggler border-0" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navMenu">
+            <ul class="navbar-nav ms-auto gap-1 align-items-lg-center">
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/"><i class="bi bi-house-door me-1"></i>Home</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/predict' %}active{% endif %}" href="/predict"><i class="bi bi-cpu me-1"></i>Predict</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/dashboard' %}active{% endif %}" href="/dashboard"><i class="bi bi-bar-chart me-1"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/iot-center' %}active{% endif %}" href="/iot-center"><i class="bi bi-cpu-fill me-1"></i>IoT Center</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/crop-info' %}active{% endif %}" href="/crop-info"><i class="bi bi-book me-1"></i>Crop Info</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/about' %}active{% endif %}" href="/about"><i class="bi bi-info-circle me-1"></i>About</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.url.path == '/contact' %}active{% endif %}" href="/contact"><i class="bi bi-envelope me-1"></i>Contact</a></li>
+
+                <!-- Notification bell (only when logged in) -->
+                <li class="nav-item d-none" id="navNotifItem">
+                    <div class="nav-link notif-bell" data-bs-toggle="dropdown" id="notifBell">
+                        <i class="bi bi-bell-fill" style="font-size:1.1rem;"></i>
+                        <span class="notif-count" id="notifCount">0</span>
+                    </div>
+                    <div class="dropdown-menu dropdown-menu-end p-0 notif-dropdown" id="notifDropdown">
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                            <span class="fw-bold small">Notifications</span>
+                            <button class="btn btn-sm btn-link text-success p-0 text-decoration-none small" onclick="markAllRead()">Mark all read</button>
+                        </div>
+                        <div id="notifList"><div class="text-center text-muted py-4 small">Loading...</div></div>
+                    </div>
+                </li>
+
+                <!-- User menu (logged in) -->
+                <li class="nav-item d-none" id="navUserItem">
+                    <div class="nav-link d-flex align-items-center gap-2" style="cursor:pointer;" data-bs-toggle="dropdown">
+                        <div class="rounded-circle bg-success d-flex align-items-center justify-content-center text-white fw-bold" style="width:30px;height:30px;font-size:.8rem;" id="navAvatar">?</div>
+                        <span id="navUserName" class="d-none d-lg-inline" style="font-size:.9rem;"></span>
+                        <i class="bi bi-chevron-down" style="font-size:.7rem;"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end" style="border-radius:12px;min-width:180px;">
+                        <li><a class="dropdown-item" href="/predict"><i class="bi bi-clock-history me-2 text-success"></i>My History</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+
+                <!-- Login button (logged out) -->
+                <li class="nav-item" id="navLoginItem">
+                    <button class="btn btn-outline-light btn-sm px-3 ms-1 fw-600" style="border-radius:8px;font-weight:600;" onclick="openAuth()">
+                        <i class="bi bi-person me-1"></i>Login
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<!-- PAGE CONTENT -->
+<main>
+    <div class="container my-5 page-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+
+<!-- FOOTER -->
+<footer>
+    <div class="container">
+        <div class="row g-4 mb-3">
+            <div class="col-md-4">
+                <div class="footer-logo mb-2"><i class="bi bi-leaf-fill me-2" style="color:#81c784;"></i>Farmpilot AI</div>
+                <p class="mb-0" style="font-size:.85rem;">Empowering farmers with AI-driven crop recommendations, disease detection, and smart irrigation insights.</p>
+            </div>
+            <div class="col-md-2">
+                <p class="fw-bold text-white mb-2">Quick Links</p>
+                <ul class="list-unstyled mb-0">
+                    <li><a href="/predict"><i class="bi bi-chevron-right me-1" style="font-size:.7rem;"></i>Predict</a></li>
+                    <li><a href="/dashboard"><i class="bi bi-chevron-right me-1" style="font-size:.7rem;"></i>Dashboard</a></li>
+                    <li><a href="/iot-center"><i class="bi bi-chevron-right me-1" style="font-size:.7rem;"></i>IoT Center</a></li>
+                    <li><a href="/crop-info"><i class="bi bi-chevron-right me-1" style="font-size:.7rem;"></i>Crop Info</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <p class="fw-bold text-white mb-2">Features</p>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-check2 me-1" style="color:#81c784;"></i>Crop Recommendation</li>
+                    <li><i class="bi bi-check2 me-1" style="color:#81c784;"></i>Disease Detection</li>
+                    <li><i class="bi bi-check2 me-1" style="color:#81c784;"></i>Smart Irrigation</li>
+                    <li><i class="bi bi-check2 me-1" style="color:#81c784;"></i>Live Weather Data</li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <p class="fw-bold text-white mb-2">Contact</p>
+                <p class="mb-1"><i class="bi bi-envelope me-2"></i>support@farmpilot.ai</p>
+                <p class="mb-0"><i class="bi bi-telephone me-2"></i>+91 98765 43210</p>
+            </div>
+        </div>
+        <hr>
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <p class="mb-0" style="font-size:.82rem;">© 2025 Farmpilot AI. All rights reserved.</p>
+            <p class="mb-0" style="font-size:.82rem;">Built with <i class="bi bi-heart-fill" style="color:#ef5350;font-size:.75rem;"></i> using FastAPI & Machine Learning</p>
+        </div>
+    </div>
+</footer>
+
+
+<!-- ═══════ AUTH MODAL ═══════ -->
+<div class="modal fade" id="authModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:20px;border:none;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <span style="font-size:2.5rem;">🌾</span>
+                    <h5 class="fw-bold mt-2 mb-0">Farmpilot AI</h5>
+                </div>
+
+                <!-- Tabs -->
+                <div class="d-flex border-bottom mb-4">
+                    <button class="auth-tab-btn active flex-grow-1" id="tabLogin" onclick="switchAuthTab('login')">Login</button>
+                    <button class="auth-tab-btn flex-grow-1" id="tabRegister" onclick="switchAuthTab('register')">Register</button>
+                </div>
+
+                <div id="authError" class="alert alert-danger d-none small py-2 mb-3"></div>
+                <div id="authSuccess" class="alert alert-success d-none small py-2 mb-3"></div>
+
+                <!-- Login form -->
+                <div id="formLogin">
+                    <div class="mb-3">
+                        <label class="fw-bold small mb-1">Email</label>
+                        <input type="email" id="loginEmail" class="form-control auth-form-input" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+                    </div>
+                    <div class="mb-4">
+                        <label class="fw-bold small mb-1">Password</label>
+                        <div class="input-group">
+                            <input type="password" id="loginPass" class="form-control auth-form-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="border-right:none;">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('loginPass',this)" style="border-radius:0 10px 10px 0;border:2px solid #e0e0e0;border-left:none;background:#fff;padding:0 14px;" tabindex="-1">
+                                <i class="bi bi-eye" style="font-size:1rem;color:#888;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn btn-success w-100 fw-bold py-2" onclick="doLogin()" id="loginBtn" style="border-radius:10px;">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </button>
+                    <p class="text-center text-muted small mt-3 mb-0">No account? <a href="#" class="text-success fw-bold text-decoration-none" onclick="switchAuthTab('register')">Register free</a></p>
+                </div>
+
+                <!-- Register form -->
+                <div id="formRegister" class="d-none">
+                    <div class="mb-3">
+                        <label class="fw-bold small mb-1">Full Name</label>
+                        <input type="text" id="regName" class="form-control auth-form-input" placeholder="Dhiraj Kumar">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold small mb-1">Email</label>
+                        <input type="email" id="regEmail" class="form-control auth-form-input" placeholder="you@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold small mb-1">Password <span class="text-muted fw-normal">(8+ chars, A–Z, a–z, 0–9)</span></label>
+                        <div class="input-group">
+                            <input type="password" id="regPass" class="form-control auth-form-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doRegister()" style="border-right:none;">
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('regPass',this)" style="border-radius:0 10px 10px 0;border:2px solid #e0e0e0;border-left:none;background:#fff;padding:0 14px;" tabindex="-1">
+                                <i class="bi bi-eye" style="font-size:1rem;color:#888;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Password strength bar -->
+                    <div class="mb-4">
+                        <div class="progress" style="height:4px;border-radius:4px;">
+                            <div id="strengthBar" class="progress-bar" style="width:0%;transition:width .3s,background .3s;"></div>
+                        </div>
+                        <div id="strengthLabel" class="text-muted" style="font-size:0.72rem;margin-top:3px;"></div>
+                    </div>
+                    <button class="btn btn-success w-100 fw-bold py-2" onclick="doRegister()" id="registerBtn" style="border-radius:10px;">
+                        <i class="bi bi-person-plus me-2"></i>Create Account
+                    </button>
+                    <p class="text-center text-muted small mt-3 mb-0">Already have an account? <a href="#" class="text-success fw-bold text-decoration-none" onclick="switchAuthTab('login')">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ═══════ FARMBOT AI CHAT WIDGET ═══════ -->
+<style>
+  /* ── Floating button ── */
+  #farmbot-btn {
+    position: fixed; bottom: 24px; right: 24px; z-index: 1050;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--primary); color: #fff; border: none;
+    box-shadow: 0 4px 18px rgba(46,125,50,.45);
+    font-size: 1.5rem; cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #farmbot-btn:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(46,125,50,.55); }
+  #farmbot-btn .fb-badge {
+    position: absolute; top: -3px; right: -3px;
+    width: 14px; height: 14px; background: #e53935;
+    border-radius: 50%; border: 2px solid #fff; display: none;
+  }
+
+  /* ── Chat panel ── */
+  #farmbot-panel {
+    position: fixed; bottom: 90px; right: 24px; z-index: 1049;
+    width: 360px; max-height: 560px;
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.18);
+    display: none; flex-direction: column; overflow: hidden;
+    animation: fbSlideIn .25s ease;
+  }
+  @keyframes fbSlideIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  /* Header */
+  .fb-header {
+    background: var(--primary); color: #fff;
+    padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .fb-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  }
+  .fb-header-info { flex: 1; }
+  .fb-header-info strong { display: block; font-size: .9rem; }
+  .fb-header-info span  { font-size: .73rem; opacity: .85; }
+  .fb-header-actions { display: flex; gap: 6px; }
+  .fb-header-actions button {
+    background: none; border: none; color: rgba(255,255,255,.8);
+    font-size: .85rem; cursor: pointer; padding: 4px 6px; border-radius: 6px;
+    transition: background .15s;
+  }
+  .fb-header-actions button:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+  /* Quick actions */
+  .fb-quick {
+    padding: 10px 12px; border-bottom: 1px solid #f0f0f0;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .fb-quick button {
+    font-size: .72rem; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--primary); color: var(--primary);
+    background: #fff; cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .fb-quick button:hover { background: var(--primary); color: #fff; }
+
+  /* Messages */
+  .fb-messages {
+    flex: 1; overflow-y: auto; padding: 14px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .fb-msg { display: flex; align-items: flex-end; gap: 7px; }
+  .fb-msg.user { flex-direction: row-reverse; }
+  .fb-bubble {
+    max-width: 80%; padding: 9px 13px;
+    border-radius: 16px; font-size: .82rem; line-height: 1.5;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .fb-msg.bot  .fb-bubble { background: #f0fdf4; color: #1b5e20; border-bottom-left-radius: 4px; }
+  .fb-msg.user .fb-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+  .fb-icon { font-size: 1.1rem; flex-shrink: 0; margin-bottom: 2px; }
+
+  /* Typing dots */
+  .fb-typing { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+  .fb-typing span {
+    width: 7px; height: 7px; background: var(--primary);
+    border-radius: 50%; animation: fbDot 1.2s infinite;
+  }
+  .fb-typing span:nth-child(2) { animation-delay: .2s; }
+  .fb-typing span:nth-child(3) { animation-delay: .4s; }
+  @keyframes fbDot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+  /* Input */
+  .fb-input-row {
+    padding: 10px 12px; border-top: 1px solid #f0f0f0;
+    display: flex; gap: 8px; align-items: flex-end;
+  }
+  #fb-input {
+    flex: 1; border: 2px solid #e0e0e0; border-radius: 12px;
+    padding: 8px 12px; font-size: .82rem; outline: none;
+    resize: none; max-height: 80px; font-family: inherit;
+    transition: border-color .2s;
+  }
+  #fb-input:focus { border-color: var(--primary); }
+  #fb-send {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--primary); color: #fff; border: none;
+    cursor: pointer; font-size: 1rem; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  #fb-send:disabled { background: #ccc; cursor: not-allowed; }
+  #fb-send:not(:disabled):hover { background: #1b5e20; }
+
+  /* Mobile full-width */
+  @media (max-width: 480px) {
+    #farmbot-panel { width: calc(100vw - 24px); right: 12px; bottom: 80px; }
+  }
+</style>
+
+<!-- Floating button -->
+<button id="farmbot-btn" title="Ask FarmBot" onclick="toggleFarmbot()">
+  🌾
+  <span class="fb-badge" id="fb-badge"></span>
+</button>
+
+<!-- Chat panel -->
+<div id="farmbot-panel">
+  <!-- Header -->
+  <div class="fb-header">
+    <div class="fb-avatar">🤖</div>
+    <div class="fb-header-info">
+      <strong>FarmBot AI</strong>
+      <span id="fb-status">Your farming assistant</span>
+    </div>
+    <div class="fb-header-actions">
+      <button onclick="fbNewChat()" title="New chat"><i class="bi bi-plus-lg"></i></button>
+      <button onclick="toggleFarmbot()" title="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+
+  <!-- Quick action chips -->
+  <div class="fb-quick">
+    <button onclick="fbQuick('What crop suits clay soil with pH 6.5?')">🌱 Crop suggest</button>
+    <button onclick="fbQuick('How do I identify leaf blight?')">🔬 Disease help</button>
+    <button onclick="fbQuick('When should I irrigate wheat?')">💧 Irrigation</button>
+    <button onclick="fbQuick('Best fertilizer for rice?')">🌾 Fertilizer</button>
+  </div>
+
+  <!-- Messages -->
+  <div class="fb-messages" id="fb-messages">
+    <div class="fb-msg bot">
+      <span class="fb-icon">🤖</span>
+      <div class="fb-bubble">👋 Hi! I'm FarmBot. Ask me anything about crops, diseases, irrigation, or soil health. How can I help you today?</div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="fb-input-row">
+    <textarea id="fb-input" rows="1" placeholder="Ask FarmBot…"
+      oninput="fbAutoResize(this)"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();fbSend();}"></textarea>
+    <button id="fb-send" onclick="fbSend()"><i class="bi bi-send-fill"></i></button>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ── State ──────────────────────────────────────────────────────────────────
+  let fbOpen = false;
+  let fbStreaming = false;
+  let fbSessionId = fbGenId();
+
+  function fbGenId() {
+    return 'fb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  // ── Toggle panel ──────────────────────────────────────────────────────────
+  window.toggleFarmbot = function () {
+    fbOpen = !fbOpen;
+    const panel = document.getElementById('farmbot-panel');
+    panel.style.display = fbOpen ? 'flex' : 'none';
+    document.getElementById('fb-badge').style.display = 'none';
+    if (fbOpen) document.getElementById('fb-input').focus();
+  };
+
+  // ── New conversation ──────────────────────────────────────────────────────
+  window.fbNewChat = function () {
+    // Clear server-side history
+    fetch(`/api/ai/chat/${fbSessionId}`, { method: 'DELETE' }).catch(() => {});
+    fbSessionId = fbGenId();
+    const msgs = document.getElementById('fb-messages');
+    msgs.innerHTML = `
+      <div class="fb-msg bot">
+        <span class="fb-icon">🤖</span>
+        <div class="fb-bubble">👋 New conversation started! What would you like to know?</div>
+      </div>`;
+  };
+
+  // ── Quick chips ────────────────────────────────────────────────────────────
+  window.fbQuick = function (text) {
+    document.getElementById('fb-input').value = text;
+    fbSend();
+  };
+
+  // ── Auto-resize textarea ───────────────────────────────────────────────────
+  window.fbAutoResize = function (el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+  };
+
+  // ── Send message ───────────────────────────────────────────────────────────
+  window.fbSend = async function () {
+    if (fbStreaming) return;
+    const input = document.getElementById('fb-input');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    fbAppendMsg('user', text);
+    const typingEl = fbAppendTyping();
+    fbSetSending(true);
+
+    try {
+      const token = localStorage.getItem('cropToken') || '';
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        },
+        body: JSON.stringify({ message: text, sessionId: fbSessionId }),
+      });
+
+      if (!res.ok) {
+        typingEl.remove();
+        fbAppendMsg('bot', '⚠️ Sorry, I couldn\'t connect to the AI service. Please try again.');
+        return;
+      }
+
+      // ── Stream the response ──────────────────────────────────────────────
+      typingEl.remove();
+      const botBubble = fbAppendStreamBubble();
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6);
+          if (payload === '[DONE]') break;
+          try {
+            const obj = JSON.parse(payload);
+            if (obj.text) {
+              botBubble.textContent += obj.text;
+              fbScrollBottom();
+            }
+            if (obj.error) {
+              botBubble.textContent = '⚠️ ' + obj.error;
+            }
+          } catch (_) { /* ignore malformed chunk */ }
+        }
+      }
+
+      // Badge when panel is closed
+      if (!fbOpen) {
+        document.getElementById('fb-badge').style.display = 'block';
+      }
+    } catch (_) {
+      typingEl?.remove();
+      fbAppendMsg('bot', '⚠️ Network error. Please check your connection.');
+    } finally {
+      fbSetSending(false);
+    }
+  };
+
+  // ── DOM helpers ────────────────────────────────────────────────────────────
+  function fbAppendMsg(role, text) {
+    const msgs = document.getElementById('fb-messages');
+    const div  = document.createElement('div');
+    div.className = 'fb-msg ' + role;
+    div.innerHTML = role === 'bot'
+      ? `<span class="fb-icon">🤖</span><div class="fb-bubble">${fbEscape(text)}</div>`
+      : `<div class="fb-bubble">${fbEscape(text)}</div>`;
+    msgs.appendChild(div);
+    fbScrollBottom();
+    return div;
+  }
+
+  function fbAppendStreamBubble() {
+    const msgs = document.getElementById('fb-messages');
+    const div  = document.createElement('div');
+    div.className = 'fb-msg bot';
+    const bubble = document.createElement('div');
+    bubble.className = 'fb-bubble';
+    div.innerHTML = '<span class="fb-icon">🤖</span>';
+    div.appendChild(bubble);
+    msgs.appendChild(div);
+    fbScrollBottom();
+    return bubble;
+  }
+
+  function fbAppendTyping() {
+    const msgs = document.getElementById('fb-messages');
+    const div  = document.createElement('div');
+    div.className = 'fb-msg bot';
+    div.innerHTML = '<span class="fb-icon">🤖</span><div class="fb-bubble"><div class="fb-typing"><span></span><span></span><span></span></div></div>';
+    msgs.appendChild(div);
+    fbScrollBottom();
+    return div;
+  }
+
+  function fbScrollBottom() {
+    const msgs = document.getElementById('fb-messages');
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function fbSetSending(busy) {
+    fbStreaming = busy;
+    document.getElementById('fb-send').disabled = busy;
+    document.getElementById('fb-status').textContent = busy ? 'Typing…' : 'Your farming assistant';
+  }
+
+  function fbEscape(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  }
+})();
+</script>
+
+<!-- ═══════ SHARED AUTH + API + NOTIFICATIONS ═══════ -->
+<script>
+// ─── Token storage ────────────────────────────────────────────────────────────
+const Auth = {
+  get token() { return localStorage.getItem('cropToken') || ''; },
+  set token(t) { localStorage.setItem('cropToken', t); },
+  get user()  {
+    try { return JSON.parse(atob(this.token.split('.')[1])); } catch { return null; }
+  },
+  clear() { localStorage.removeItem('cropToken'); },
+  isLoggedIn() { return !!this.token && !!this.user; },
+};
+
+// ─── API helper ───────────────────────────────────────────────────────────────
+async function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (Auth.token) headers['Authorization'] = 'Bearer ' + Auth.token;
+  const res = await fetch(path, { ...options, headers });
+  const json = await res.json().catch(() => ({}));
+  if (res.status === 401) { Auth.clear(); updateNavbar(); }
+  if (!res.ok) throw new Error(json.error?.message || json.detail || 'Request failed');
+  return json.data ?? json;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function showToast(type, title, msg, duration = 4000) {
+  const icons  = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  const colors = { success:'#2e7d32', error:'#c62828', warning:'#e65100', info:'#1565c0' };
+  const stack  = document.getElementById('toastStack');
+  const el     = document.createElement('div');
+  el.className = 'toast-item';
+  el.innerHTML = `<span style="font-size:1.3rem;">${icons[type]||'ℹ️'}</span>
+    <div>
+      <div style="font-weight:700;color:${colors[type]||'#333'};font-size:.85rem;">${title}</div>
+      ${msg ? `<div style="font-size:.78rem;color:#666;">${msg}</div>` : ''}
+    </div>`;
+  stack.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, duration);
+}
+
+// ─── Navbar update ────────────────────────────────────────────────────────────
+function updateNavbar() {
+  const user = Auth.user;
+  document.getElementById('navLoginItem').classList.toggle('d-none', !!user);
+  document.getElementById('navUserItem').classList.toggle('d-none', !user);
+  document.getElementById('navNotifItem').classList.toggle('d-none', !user);
+  if (user) {
+    document.getElementById('navUserName').textContent = user.name;
+    document.getElementById('navAvatar').textContent   = user.name[0].toUpperCase();
+    loadNotifCount();
+  }
+  document.dispatchEvent(new CustomEvent('auth:changed', { detail: { user } }));
+}
+
+// ─── Auth actions ─────────────────────────────────────────────────────────────
+function openAuth() {
+  switchAuthTab('login');
+  document.getElementById('authError').classList.add('d-none');
+  document.getElementById('authSuccess').classList.add('d-none');
+  new bootstrap.Modal(document.getElementById('authModal')).show();
+}
+function switchAuthTab(tab) {
+  document.getElementById('formLogin').classList.toggle('d-none', tab !== 'login');
+  document.getElementById('formRegister').classList.toggle('d-none', tab !== 'register');
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('authError').classList.add('d-none');
+  document.getElementById('authSuccess').classList.add('d-none');
+}
+
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('authError');
+  errEl.classList.add('d-none');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+  try {
+    const data = await api('/api/auth/login', { method:'POST', body: JSON.stringify({ email: document.getElementById('loginEmail').value.trim(), password: document.getElementById('loginPass').value }) });
+    Auth.token = data.accessToken;
+    bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+    updateNavbar();
+    showToast('success', 'Welcome back!', `Logged in as ${data.user.name}`);
+  } catch(e) {
+    errEl.textContent = e.message; errEl.classList.remove('d-none');
+  } finally { btn.disabled=false; btn.innerHTML='<i class="bi bi-box-arrow-in-right me-2"></i>Login'; }
+}
+
+async function doRegister() {
+  const btn = document.getElementById('registerBtn');
+  const errEl = document.getElementById('authError');
+  const sucEl = document.getElementById('authSuccess');
+  errEl.classList.add('d-none'); sucEl.classList.add('d-none');
+  btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+  try {
+    const data = await api('/api/auth/register', { method:'POST', body: JSON.stringify({ name: document.getElementById('regName').value.trim(), email: document.getElementById('regEmail').value.trim(), password: document.getElementById('regPass').value }) });
+    Auth.token = data.accessToken;
+    sucEl.textContent = `Account created! Welcome, ${data.user.name} 🎉`; sucEl.classList.remove('d-none');
+    updateNavbar();
+    setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('authModal'))?.hide(), 1500);
+    showToast('success', 'Account created!', `Welcome, ${data.user.name}`);
+  } catch(e) {
+    errEl.textContent = e.message; errEl.classList.remove('d-none');
+  } finally { btn.disabled=false; btn.innerHTML='<i class="bi bi-person-plus me-2"></i>Create Account'; }
+}
+
+function logout() {
+  Auth.clear();
+  updateNavbar();
+  showToast('info', 'Logged out', 'See you next time!');
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+async function loadNotifCount() {
+  try {
+    const data = await api('/api/notifications?unread=true&limit=5');
+    const count = data.unreadCount || 0;
+    const el    = document.getElementById('notifCount');
+    el.textContent = count > 9 ? '9+' : count;
+    el.style.display = count > 0 ? 'flex' : 'none';
+  } catch {}
+}
+
+async function loadNotifications() {
+  try {
+    const data = await api('/api/notifications?limit=15');
+    const list = document.getElementById('notifList');
+    if (!data.notifications?.length) {
+      list.innerHTML = '<div class="text-center text-muted py-4 small">No notifications yet.</div>';
+      return;
+    }
+    const icons = {
+      crop_result:'🌾',
+      disease_alert:'🔬',
+      query_reply:'📬',
+      system:'📢',
+      power_on:'🔌',
+      motor_started:'🚿',
+      motor_stopped:'⏹️',
+      motor_failed:'🛠️',
+      no_water:'💧',
+      rain_detected:'🌧️'
+    };
+    list.innerHTML = data.notifications.map(n => `
+      <div class="notif-item ${n.read?'':'unread'}" onclick="markRead('${n._id}',this)">
+        <div class="d-flex align-items-start gap-2">
+          <span style="font-size:1.1rem;">${icons[n.type]||'🔔'}</span>
+          <div>
+            <div class="fw-bold" style="font-size:.82rem;">${n.title}</div>
+            <div class="text-muted" style="font-size:.75rem;">${n.message}</div>
+            <div class="text-muted" style="font-size:.7rem;margin-top:2px;">${new Date(n.createdAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+          ${!n.read ? '<div class="ms-auto"><div style="width:8px;height:8px;background:#2e7d32;border-radius:50%;margin-top:4px;"></div></div>' : ''}
+        </div>
+      </div>
+    `).join('');
+  } catch {}
+}
+
+async function markRead(id, el) {
+  try { await api(`/api/notifications/${id}/read`, { method:'PATCH' }); }
+  catch {}
+  el.classList.remove('unread');
+  el.querySelector('div[style*="border-radius:50%"]')?.remove();
+  loadNotifCount();
+}
+
+async function markAllRead() {
+  try { await api('/api/notifications/read-all', { method:'PATCH' }); }
+  catch {}
+  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+  document.getElementById('notifCount').style.display = 'none';
+}
+
+// Load notifications when bell is opened
+document.getElementById('notifBell')?.addEventListener('show.bs.dropdown', loadNotifications);
+
+// ─── Show / hide password ─────────────────────────────────────────────────────
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const icon  = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('bi-eye', 'bi-eye-slash');
+    icon.style.color = '#2e7d32';
+  } else {
+    input.type = 'password';
+    icon.classList.replace('bi-eye-slash', 'bi-eye');
+    icon.style.color = '#888';
+  }
+  input.focus();
+}
+
+// ─── Password strength meter ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const regPass = document.getElementById('regPass');
+  if (!regPass) return;
+  regPass.addEventListener('input', () => {
+    const v = regPass.value;
+    let score = 0;
+    if (v.length >= 8)            score++;
+    if (/[A-Z]/.test(v))          score++;
+    if (/[a-z]/.test(v))          score++;
+    if (/[0-9]/.test(v))          score++;
+    if (/[^A-Za-z0-9]/.test(v))   score++;
+
+    const bar   = document.getElementById('strengthBar');
+    const label = document.getElementById('strengthLabel');
+    const levels = [
+      { pct:'0%',   cls:'',           text:'' },
+      { pct:'25%',  cls:'bg-danger',  text:'Weak' },
+      { pct:'50%',  cls:'bg-warning', text:'Fair' },
+      { pct:'75%',  cls:'bg-info',    text:'Good' },
+      { pct:'100%', cls:'bg-success', text:'Strong ✓' },
+    ];
+    const lvl = levels[Math.min(score, 4)];
+    bar.style.width        = lvl.pct;
+    bar.className          = 'progress-bar ' + lvl.cls;
+    label.textContent      = lvl.text;
+    label.style.color      = score >= 4 ? '#2e7d32' : score >= 3 ? '#0277bd' : '#e65100';
+  });
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+updateNavbar();
+// Refresh notification count every 60 seconds
+setInterval(() => { if (Auth.isLoggedIn()) loadNotifCount(); }, 60000);
+</script>
+
+</body>
+</html>

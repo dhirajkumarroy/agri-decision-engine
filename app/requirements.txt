@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pandas
+numpy
+scikit-learn
+joblib
+tensorflow-macos
+tensorflow-metal
+pillow
+python-dotenv
+python-multipart
+requests
+jinja2

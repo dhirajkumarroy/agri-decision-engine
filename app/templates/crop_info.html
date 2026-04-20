@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .crop-select-card {
+        border-radius: 20px;
+        border: none;
+    }
+    .form-select {
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        padding: 12px 14px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    .form-select:focus {
+        border-color: #2e7d32;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.15);
+    }
+
+    .result-section {
+        border-radius: 20px;
+        border: none;
+        overflow: hidden;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    .info-tile {
+        background: #f8fff8;
+        border: 1px solid #e8f5e9;
+        border-radius: 14px;
+        padding: 14px 16px;
+    }
+    .info-tile-icon {
+        font-size: 1.3rem;
+        margin-bottom: 6px;
+    }
+    .info-tile-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .info-tile-val {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1b5e20;
+        margin-top: 2px;
+    }
+
+    .tip-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .tip-item:last-child { border-bottom: none; }
+    .tip-bullet {
+        width: 24px; height: 24px;
+        min-width: 24px;
+        border-radius: 50%;
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-size: 0.7rem;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        margin-top: 1px;
+    }
+
+    .loader {
+        width: 36px; height: 36px;
+        border: 3px solid #c8e6c9;
+        border-top-color: #2e7d32;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        margin: auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .crop-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        border-radius: 50px;
+        padding: 4px 14px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+</style>
+
+
+<!-- PAGE HEADER -->
+<div class="text-center mb-4 animate__animated animate__fadeInDown">
+    <h2 class="fw-bold text-success">Crop Knowledge Base</h2>
+    <p class="text-muted">Detailed growing guides for 13+ major crops</p>
+</div>
+
+
+<!-- CROP SELECT -->
+<div class="card crop-select-card shadow-sm p-4 mb-4 animate__animated animate__fadeInUp">
+    <label class="fw-bold mb-2">Select a Crop to View Details</label>
+    <div class="row g-2">
+        <div class="col">
+            <select id="cropSelect" class="form-select">
+                <option value="" disabled selected>Choose a crop...</option>
+                <option value="rice">Rice</option>
+                <option value="wheat">Wheat</option>
+                <option value="maize">Maize (Corn)</option>
+                <option value="cotton">Cotton</option>
+                <option value="sugarcane">Sugarcane</option>
+                <option value="millet">Millet</option>
+                <option value="barley">Barley</option>
+                <option value="groundnut">Groundnut (Peanut)</option>
+                <option value="soybean">Soybean</option>
+                <option value="pulses">Pulses</option>
+                <option value="potato">Potato</option>
+                <option value="tomato">Tomato</option>
+                <option value="sunflower">Sunflower</option>
+                <option value="jute">Jute</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-success fw-bold px-4 py-2" onclick="fetchDetails()"
+                    style="border-radius:10px; height:100%;">
+                <i class="bi bi-search me-1"></i>Get Details
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- RESULT BOX -->
+<div id="resultBox" style="display:none;">
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="loader mb-3"></div>
+        <p class="text-muted fw-bold">Fetching crop details...</p>
+    </div>
+
+    <!-- Content -->
+    <div id="cropContent" style="display:none;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <h4 class="fw-bold mb-1" id="cropTitle"></h4>
+                <span class="crop-badge" id="cropSeason">
+                    <i class="bi bi-calendar3"></i><span></span>
+                </span>
+            </div>
+            <button class="btn btn-outline-success btn-sm" onclick="copyDetails()" style="border-radius:8px;">
+                <i class="bi bi-clipboard me-1"></i>Copy
+            </button>
+        </div>
+
+        <!-- NPK + Conditions Grid -->
+        <div class="info-grid mb-4" id="infoGrid"></div>
+
+        <!-- Soil + Water -->
+        <div class="row g-3 mb-4" id="soilWaterRow"></div>
+
+        <!-- Tips -->
+        <div class="card shadow-sm p-4" style="border-radius:16px;">
+            <h6 class="fw-bold mb-3"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Farming Tips</h6>
+            <div id="tipsList"></div>
+        </div>
+
+    </div>
+
+    <!-- Error -->
+    <div id="cropError" style="display:none;">
+        <div class="alert alert-danger d-flex align-items-center gap-2" style="border-radius:12px;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span id="cropErrorMsg">Unable to fetch crop details.</span>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- EXPLORE HINT -->
+<div class="text-center mt-4 text-muted animate__animated animate__fadeInUp" id="hint">
+    <i class="bi bi-arrow-up-circle me-1"></i>
+    Select a crop above to view detailed growing requirements
+</div>
+
+
+<script>
+async function fetchDetails() {
+    const crop = document.getElementById('cropSelect').value;
+    if (!crop) { alert('Please select a crop.'); return; }
+
+    document.getElementById('hint').style.display = 'none';
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('cropContent').style.display = 'none';
+    document.getElementById('cropError').style.display = 'none';
+
+    try {
+        const res = await fetch(`/api/crops/info/${crop}`);
+        const payload = await res.json();
+        const data = payload.data || payload;
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (!res.ok || payload.error || data.error) {
+            document.getElementById('cropErrorMsg').innerText =
+                payload.error?.message || data.error?.message || data.error || 'Crop data not found.';
+            document.getElementById('cropError').style.display = 'block';
+            return;
+        }
+
+        renderCropInfo(data);
+        document.getElementById('cropContent').style.display = 'block';
+
+    } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('cropErrorMsg').innerText = err.message || 'Network error. Check server status.';
+        document.getElementById('cropError').style.display = 'block';
+    }
+}
+
+function renderCropInfo(data) {
+    const info = data.info;
+    const name = data.crop_name;
+
+    document.getElementById('cropTitle').innerText =
+        name.charAt(0).toUpperCase() + name.slice(1) + ' — Growing Guide';
+    document.querySelector('#cropSeason span').innerText = info.season || 'Year-round';
+
+    // Info grid tiles
+    const tiles = [
+        { icon: '🌿', label: 'Nitrogen (N)', val: info.N },
+        { icon: '🌸', label: 'Phosphorus (P)', val: info.P },
+        { icon: '🍂', label: 'Potassium (K)', val: info.K },
+        { icon: '🌡️', label: 'Temperature', val: info.temperature },
+        { icon: '💧', label: 'Humidity', val: info.humidity },
+        { icon: '🧪', label: 'Soil pH', val: info.ph },
+        { icon: '🌧️', label: 'Rainfall', val: info.rainfall },
+        { icon: '⏱️', label: 'Growing Period', val: info.growing_period || 'N/A' }
+    ];
+
+    document.getElementById('infoGrid').innerHTML = tiles.map(t => `
+        <div class="info-tile">
+            <div class="info-tile-icon">${t.icon}</div>
+            <div class="info-tile-label">${t.label}</div>
+            <div class="info-tile-val">${t.val || 'N/A'}</div>
+        </div>
+    `).join('');
+
+    // Soil + Water
+    document.getElementById('soilWaterRow').innerHTML = `
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3 h-100" style="border-radius:14px; border-left:4px solid #2e7d32 !important;">
+                <p class="fw-bold mb-1 small text-muted">SOIL TYPE</p>
+                <p class="fw-bold mb-0">${info.soil_type || 'N/A'}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm p-3 h-100" style="border-radius:14px; border-left:4px solid #0277bd !important;">
+                <p class="fw-bold mb-1 small text-muted">WATER REQUIREMENT</p>
+                <p class="fw-bold mb-0">${info.water_requirement || 'N/A'}</p>
+            </div>
+        </div>
+    `;
+
+    // Tips
+    const tips = info.tips || [];
+    document.getElementById('tipsList').innerHTML = tips.map((tip, i) => `
+        <div class="tip-item">
+            <div class="tip-bullet">${i + 1}</div>
+            <p class="mb-0 small">${tip}</p>
+        </div>
+    `).join('') || '<p class="text-muted small">No tips available.</p>';
+}
+
+function copyDetails() {
+    const title = document.getElementById('cropTitle').innerText;
+    const grid = document.getElementById('infoGrid').innerText;
+    const tips = document.getElementById('tipsList').innerText;
+    const text = `${title}\n\n${grid}\n\nFarming Tips:\n${tips}`;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.currentTarget;
+        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+        setTimeout(() => { btn.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copy'; }, 2000);
+    });
+}
+
+// Auto-load if select changes
+document.getElementById('cropSelect').addEventListener('change', fetchDetails);
+</script>
+
+{% endblock %}

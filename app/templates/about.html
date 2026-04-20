@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .about-card {
+        border-radius: 15px;
+        transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .about-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .icon-box {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e8f7ec;
+    }
+    .step-box {
+        border-left: 4px solid #2e7d32;
+        padding-left: 15px;
+    }
+    .tech-icon {
+        font-size: 2.8rem;
+        color: #2e7d32;
+        transition: .3s;
+    }
+    .tech-icon:hover {
+        transform: scale(1.2);
+    }
+</style>
+
+<!-- HEADER -->
+<div class="text-center mb-4 animate__animated animate__fadeInDown">
+    <h1 class="fw-bold text-success">About Farmpilot AI</h1>
+    <p class="lead mt-3 text-muted">
+        Empowering farmers with intelligent crop recommendations using Machine Learning & Live Weather Data.
+    </p>
+</div>
+
+
+<!-- ABOUT GOAL -->
+<div class="card shadow p-4 about-card mb-5 animate__animated animate__fadeInUp">
+    <h4 class="fw-bold"><i class="bi bi-bullseye text-success"></i> Project Objective</h4>
+    <p class="mt-2 text-muted">
+        Farmpilot AI is designed to assist farmers and agricultural researchers in making informed decisions 
+        about the best crop to cultivate. It blends soil nutrient analysis, rainfall patterns, and real-time 
+        weather updates with machine learning predictions — delivering results in seconds.
+    </p>
+</div>
+
+
+<!-- FEATURES -->
+<h3 class="fw-bold text-success text-center mb-4 animate__animated animate__fadeIn">Key Features</h3>
+
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card about-card p-4 shadow text-center animate__animated animate__zoomIn">
+            <div class="icon-box mb-3">
+                <i class="bi bi-cpu-fill text-success fs-3"></i>
+            </div>
+            <h5 class="fw-bold">ML Crop Prediction</h5>
+            <p class="text-muted">
+                Our model analyzes soil NPK values, pH, rainfall & weather to compute the most suitable crops.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card about-card p-4 shadow text-center animate__animated animate__zoomIn animate__delay-1s">
+            <div class="icon-box mb-3">
+                <i class="bi bi-cloud-sun-fill text-success fs-3"></i>
+            </div>
+            <h5 class="fw-bold">Live Weather Integration</h5>
+            <p class="text-muted">
+                Real-time temperature, humidity & climate data enhances recommendation accuracy.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card about-card p-4 shadow text-center animate__animated animate__zoomIn animate__delay-2s">
+            <div class="icon-box mb-3">
+                <i class="bi bi-graph-up-arrow text-success fs-3"></i>
+            </div>
+            <h5 class="fw-bold">High Accuracy</h5>
+            <p class="text-muted">
+                Model outputs top 5 recommended crops with confidence scores for easy decision-making.
+            </p>
+        </div>
+    </div>
+</div>
+
+
+<!-- WORKFLOW -->
+<h3 class="fw-bold text-success mb-3">How It Works</h3>
+
+<div class="card p-4 shadow about-card mb-5 animate__animated animate__fadeInUp">
+    <div class="step-box mb-3">
+        <h5 class="fw-bold text-success">Step 1 — Input Soil & Weather Data</h5>
+        <p class="text-muted">User provides NPK, pH, rainfall, and location for live weather.</p>
+    </div>
+
+    <div class="step-box mb-3">
+        <h5 class="fw-bold text-success">Step 2 — Weather Fetched Automatically</h5>
+        <p class="text-muted">System retrieves real-time weather data for the selected city.</p>
+    </div>
+
+    <div class="step-box mb-3">
+        <h5 class="fw-bold text-success">Step 3 — ML Model Predicts Crops</h5>
+        <p class="text-muted">The model computes suitability and returns top crop recommendations.</p>
+    </div>
+
+    <div class="step-box">
+        <h5 class="fw-bold text-success">Step 4 — Results with Probability</h5>
+        <p class="text-muted">The interface displays crops with images and match percentages.</p>
+    </div>
+</div>
+
+
+<!-- TECH STACK -->
+<h3 class="fw-bold text-success text-center mb-4">Technology Stack</h3>
+
+<div class="text-center mb-5">
+    <i class="bi bi-python tech-icon mx-3"></i>
+    <i class="bi bi-lightning-fill tech-icon mx-3"></i>
+    <i class="bi bi-cloud-fill tech-icon mx-3"></i>
+    <i class="bi bi-bar-chart-fill tech-icon mx-3"></i>
+</div>
+
+<!-- PROJECT INFO CARD -->
+<div class="card about-card shadow p-4 animate__animated animate__fadeInUp">
+    <h4 class="fw-bold"><i class="bi bi-info-circle text-success"></i> Project Details</h4>
+    <ul class="mt-3 text-muted">
+        <li>✔️ Supports 22+ crops with accurate ML predictions</li>
+        <li>✔️ Uses FastAPI backend with Jinja templates</li>
+        <li>✔️ Powered by live weather API (temperature, humidity)</li>
+        <li>✔️ Clean UI with Bootstrap 5 & animations</li>
+        <li>✔️ Easy to extend: can integrate fertilizer suggestions, crop calendar, etc.</li>
+    </ul>
+</div>
+
+{% endblock %}

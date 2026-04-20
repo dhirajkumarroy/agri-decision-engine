@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Farmpilot AI — Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-dark: #1b5e20;
+      --primary-light: #e8f5e9;
+      --sidebar-w: 248px;
+      --topbar-h: 60px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(67,160,71,0.08), transparent 20%),
+        linear-gradient(180deg, #f5f8f5 0%, #eef2f0 100%);
+      margin: 0;
+      color: #18221b;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: linear-gradient(180deg, #1a2b1c 0%, #1b2a1d 100%);
+      position: fixed; top: 0; left: 0;
+      display: flex; flex-direction: column;
+      z-index: 200;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.18);
+    }
+    .sidebar-brand {
+      padding: 18px 16px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-brand .brand-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, #43a047, #2e7d32);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .sidebar-brand .brand-text { line-height: 1.2; }
+    .sidebar-brand .brand-name { color: #e8f5e9; font-weight: 700; font-size: 0.95rem; }
+    .sidebar-brand .brand-sub  { color: rgba(255,255,255,0.35); font-size: 0.7rem; }
+
+    .nav-section-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.25); padding: 14px 18px 5px;
+      text-transform: uppercase;
+    }
+    .nav-link {
+      color: rgba(255,255,255,0.6) !important;
+      padding: 9px 14px; border-radius: 8px;
+      margin: 1px 8px; display: flex; align-items: center;
+      gap: 9px; font-size: 0.875rem;
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none !important;
+    }
+    .nav-link i { width: 18px; text-align: center; font-size: 0.95rem; }
+    .nav-link:hover { background: rgba(255,255,255,0.06) !important; color: rgba(255,255,255,0.85) !important; }
+    .nav-link.active { background: rgba(46,125,50,0.3) !important; color: #a5d6a7 !important; }
+    .nav-link .nav-badge { margin-left: auto; }
+
+    .sidebar-footer {
+      padding: 12px; border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 6px; border-radius: 8px; margin-bottom: 8px;
+    }
+    .sidebar-avatar {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #43a047, #2e7d32);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
+    .sidebar-user-name { color: #e8f5e9; font-size: 0.82rem; font-weight: 600; }
+    .sidebar-user-role { color: rgba(255,255,255,0.35); font-size: 0.7rem; }
+
+    /* ── Main area ───────────────────────────────────────────────────── */
+    #main { margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+
+    #topbar {
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(27,94,32,0.08);
+      padding: 0 24px;
+      height: var(--topbar-h);
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 8px 28px rgba(17,24,39,0.06);
+    }
+    .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; }
+    .topbar-breadcrumb .page-title { font-weight: 700; font-size: 1rem; color: #1a1a1a; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .topbar-clock { font-size: 0.8rem; color: #888; line-height: 1.3; text-align: right; }
+    .refresh-indicator {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: #888; cursor: pointer;
+    }
+    .refresh-ring {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: conic-gradient(#43a047 0%, #e8f5e9 0%);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 1s linear;
+    }
+    .refresh-ring-inner { width: 14px; height: 14px; border-radius: 50%; background: white; }
+
+    .page { display: none; padding: 24px; flex: 1; animation: fadePage .24s ease; }
+    .page.active { display: block; }
+    @keyframes fadePage { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .page-hero {
+      background:
+        radial-gradient(circle at top right, rgba(129,199,132,0.35), transparent 25%),
+        linear-gradient(135deg, #173a1d 0%, #24572d 58%, #2e7d32 100%);
+      color: white;
+      border-radius: 18px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 16px 36px rgba(27,94,32,0.16);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .page-hero-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+    .page-hero-sub { font-size: 0.86rem; color: rgba(255,255,255,0.78); max-width: 720px; margin: 0; }
+    .page-hero-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 999px;
+      font-size: 0.76rem; font-weight: 700;
+      background: rgba(255,255,255,0.12); color: #f1fff1;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    /* ── Stat cards ──────────────────────────────────────────────────── */
+    .stat-card {
+      background: linear-gradient(180deg, #ffffff 0%, #fcfefc 100%);
+      border-radius: 14px;
+      border: 1px solid rgba(46,125,50,0.08);
+      padding: 20px;
+      box-shadow: 0 10px 26px rgba(17,24,39,0.05);
+      transition: box-shadow 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute; inset: 0 auto auto 0;
+      width: 100%; height: 4px;
+      background: linear-gradient(90deg, #43a047, rgba(67,160,71,0.08));
+    }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    .stat-icon {
+      width: 44px; height: 44px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; flex-shrink: 0;
+    }
+    .stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1; color: #1a1a1a; }
+    .stat-label { font-size: 0.78rem; color: #888; margin-bottom: 4px; }
+    .stat-sub { font-size: 0.72rem; color: #aaa; margin-top: 4px; }
+    .stat-sub .up   { color: #2e7d32; }
+    .stat-sub .down { color: #c62828; }
+
+    /* ── Tables ──────────────────────────────────────────────────────── */
+    .table-card {
+      background: rgba(255,255,255,0.92); border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(17,24,39,0.06);
+      border: 1px solid rgba(17,24,39,0.05);
+      overflow: hidden;
+    }
+    .table-card-header {
+      padding: 16px 20px; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      background: linear-gradient(180deg, #fcfefc 0%, #f6faf6 100%);
+    }
+    .section-kicker { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; color: #7a8b7c; text-transform: uppercase; }
+    .table th {
+      font-size: 0.72rem; font-weight: 700; color: #999;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      background: #fafafa; border-bottom: 1px solid #f0f0f0 !important;
+      padding: 10px 16px !important;
+    }
+    .table td { vertical-align: middle; font-size: 0.865rem; padding: 11px 16px !important; border-color: #f5f5f5 !important; }
+    .table tbody tr:hover { background: #fafcfa; }
+
+    /* ── Status badges ───────────────────────────────────────────────── */
+    .badge-pill { border-radius: 50px; padding: 3px 10px; font-size: 0.72rem; font-weight: 600; }
+    .s-pending   { background: #fff3e0; color: #e65100; }
+    .s-in_review { background: #e3f2fd; color: #1565c0; }
+    .s-replied   { background: #e8f5e9; color: #2e7d32; }
+    .s-closed    { background: #f5f5f5; color: #757575; }
+    .online-dot  { width: 8px; height: 8px; border-radius: 50%; background: #43a047; display: inline-block; margin-right: 5px; box-shadow: 0 0 0 2px #c8e6c9; }
+    .offline-dot { width: 8px; height: 8px; border-radius: 50%; background: #bdbdbd; display: inline-block; margin-right: 5px; }
+
+    /* ── Skeleton ────────────────────────────────────────────────────── */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .sk-row { height: 14px; margin-bottom: 8px; }
+    .sk-row.w-75 { width: 75%; }
+    .sk-row.w-50 { width: 50%; }
+    .sk-row.w-90 { width: 90%; }
+
+    /* ── Search ──────────────────────────────────────────────────────── */
+    .search-input { max-width: 220px; font-size: 0.85rem; border-radius: 10px; border-color: #dbe5dc; }
+    .search-input:focus { box-shadow: 0 0 0 3px rgba(46,125,50,0.15); border-color: var(--primary); }
+
+    /* ── Reply modal ─────────────────────────────────────────────────── */
+    .query-bubble  { background: #f8f9fa; border-left: 3px solid var(--primary); border-radius: 6px; padding: 12px 14px; font-size: 0.875rem; }
+    .reply-bubble  { background: #f1f8e9; border-left: 3px solid #81c784; border-radius: 6px; padding: 12px 14px; font-size: 0.875rem; margin-top: 8px; }
+
+    /* ── Broadcast composer ─────────────────────────────────────────── */
+    .broadcast-shell {
+      background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,252,250,0.98) 100%);
+      border-radius: 24px;
+      border: 1px solid rgba(46,125,50,0.12);
+      box-shadow: 0 20px 48px rgba(17,24,39,0.08);
+      overflow: hidden;
+    }
+    .broadcast-hero {
+      padding: 24px;
+      background:
+        radial-gradient(circle at top right, rgba(200,230,201,0.8), transparent 28%),
+        linear-gradient(135deg, #173a1d 0%, #24572d 60%, #2e7d32 100%);
+      color: #fff;
+    }
+    .broadcast-hero .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px; border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.14);
+      font-size: 0.76rem; font-weight: 700;
+    }
+    .broadcast-hero h5 { margin: 14px 0 8px; font-weight: 800; }
+    .broadcast-hero p { margin: 0; color: rgba(255,255,255,0.78); max-width: 640px; }
+    .broadcast-body { padding: 24px; }
+    .broadcast-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 18px;
+    }
+    .broadcast-card {
+      background: #fff;
+      border: 1px solid rgba(17,24,39,0.07);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 22px rgba(17,24,39,0.04);
+    }
+    .broadcast-card-title {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 12px;
+    }
+    .broadcast-card-title h6 { margin: 0; font-weight: 700; }
+    .broadcast-muted { font-size: 0.8rem; color: #78857a; }
+    .broadcast-label {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 6px;
+      font-size: 0.8rem; font-weight: 700; color: #516154;
+    }
+    .broadcast-input, .broadcast-textarea {
+      border-radius: 14px;
+      border: 1px solid #d7e3d8;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdfb 100%);
+      padding: 13px 14px;
+      font-size: 0.94rem;
+    }
+    .broadcast-input:focus, .broadcast-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(46,125,50,0.12);
+    }
+    .broadcast-textarea { min-height: 180px; resize: vertical; }
+    .broadcast-helper {
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: #7a8b7c;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .broadcast-templates {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin: 14px 0 18px;
+    }
+    .template-chip {
+      border: 1px solid rgba(46,125,50,0.16);
+      background: #f6fbf6;
+      color: #255b2c;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .template-chip:hover {
+      background: #e8f5e9;
+      border-color: rgba(46,125,50,0.3);
+      transform: translateY(-1px);
+    }
+    .broadcast-actions {
+      display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;
+    }
+    .broadcast-actions .btn {
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 700;
+    }
+    .broadcast-stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .broadcast-stat {
+      background: #f7faf7;
+      border: 1px solid #e3ece4;
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .broadcast-stat .val { font-size: 1rem; font-weight: 800; color: #1d3320; }
+    .broadcast-stat .lbl { font-size: 0.74rem; color: #768578; margin-top: 2px; }
+    .preview-card {
+      background:
+        radial-gradient(circle at top right, rgba(129,199,132,0.24), transparent 26%),
+        linear-gradient(180deg, #ffffff 0%, #f9fcf9 100%);
+    }
+    .preview-phone {
+      border-radius: 22px;
+      border: 1px solid #d9e4da;
+      background: #f5f8f5;
+      padding: 14px;
+    }
+    .preview-pill {
+      width: 70px; height: 6px; border-radius: 999px;
+      background: #ccd8ce; margin: 0 auto 14px;
+    }
+    .preview-notice {
+      background: #fff;
+      border: 1px solid #e4ece5;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 20px rgba(17,24,39,0.05);
+    }
+    .preview-head {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .preview-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #43a047, #2e7d32);
+      color: #fff; font-size: 1rem;
+      box-shadow: 0 10px 18px rgba(46,125,50,0.25);
+    }
+    .preview-meta { font-size: 0.72rem; color: #7b8b7d; }
+    .preview-title { font-size: 0.95rem; font-weight: 800; color: #18221b; margin-bottom: 6px; }
+    .preview-message { font-size: 0.84rem; color: #516154; line-height: 1.55; white-space: pre-wrap; }
+    .preview-empty {
+      font-size: 0.82rem; color: #7a8b7c;
+      text-align: center; padding: 22px 12px;
+      border: 1px dashed #d7e3d8; border-radius: 16px;
+      background: rgba(255,255,255,0.7);
+    }
+    .tone-list {
+      display: grid; gap: 10px; margin-top: 14px;
+    }
+    .tone-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px; border-radius: 14px;
+      background: #f7faf7; border: 1px solid #e3ece4;
+      font-size: 0.8rem; color: #5d6d5f;
+    }
+    .tone-item i { color: #2e7d32; }
+
+    @media (max-width: 992px) {
+      .broadcast-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Login ───────────────────────────────────────────────────────── */
+    #loginScreen {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a5c21 0%, #43a047 60%, #66bb6a 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      background: white; border-radius: 20px;
+      padding: 44px 40px; width: 100%; max-width: 400px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    }
+    .login-logo { width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg,#43a047,#1b5e20); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.6rem; }
+
+    /* ── Health ──────────────────────────────────────────────────────── */
+    .health-card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .svc-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+    .svc-row:last-child { border-bottom: none; }
+    .svc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── IoT page ────────────────────────────────────────────────────── */
+    .device-card {
+      background:
+        radial-gradient(circle at top right, rgba(232,245,233,0.9), transparent 30%),
+        linear-gradient(180deg, #ffffff 0%, #fbfefb 100%);
+      border-radius: 16px; padding: 18px 20px;
+      box-shadow: 0 12px 28px rgba(17,24,39,0.06);
+      border: 1px solid rgba(46,125,50,0.08);
+      transition: box-shadow 0.2s;
+    }
+    .device-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+    .device-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .device-id { font-weight: 700; font-size: 0.95rem; }
+    .sensor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .sensor-chip { background: #f8f9fa; border-radius: 8px; padding: 8px 10px; text-align: center; }
+    .sensor-chip .val { font-weight: 700; font-size: 1rem; }
+    .sensor-chip .lbl { font-size: 0.65rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Toast container ─────────────────────────────────────────────── */
+    #toastContainer {
+      position: fixed; bottom: 24px; right: 24px;
+      z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: white; border-radius: 10px; padding: 12px 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.14);
+      min-width: 280px; max-width: 360px;
+      animation: slideIn 0.2s ease;
+      border-left: 4px solid #ccc;
+    }
+    .toast-item.success { border-left-color: #43a047; }
+    .toast-item.error   { border-left-color: #e53935; }
+    .toast-item.warning { border-left-color: #fb8c00; }
+    .toast-item.info    { border-left-color: #1e88e5; }
+    .toast-icon { font-size: 1.1rem; margin-top: 1px; flex-shrink: 0; }
+    .toast-body { flex: 1; }
+    .toast-title { font-weight: 700; font-size: 0.85rem; color: #1a1a1a; }
+    .toast-msg   { font-size: 0.8rem; color: #666; margin-top: 2px; }
+    .toast-close { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1; }
+    @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { to { transform: translateX(30px); opacity: 0; } }
+
+    /* ── Misc ────────────────────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 48px 24px; color: #bbb; }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+    .empty-state p { font-size: 0.9rem; margin: 0; }
+    .btn-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+    .avatar-sm { width: 32px; height: 32px; border-radius: 8px; background: var(--primary); color: white; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+    .progress-thin { height: 6px; border-radius: 50px; }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .mini-panel {
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .mini-panel-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.72); margin-bottom: 6px; }
+    .mini-panel-value { font-size: 1rem; font-weight: 700; color: white; }
+
+    .table-card-header .helper-copy {
+      font-size: 0.78rem;
+      color: #7b837e;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 992px) {
+      #sidebar { position: static; width: 100%; min-height: auto; }
+      #main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px; border:none;">
+      <div class="modal-body p-4">
+        <div class="text-center mb-3">
+          <div style="font-size:2.2rem;" id="confirmIcon">⚠️</div>
+          <h6 class="fw-bold mt-2 mb-1" id="confirmTitle">Are you sure?</h6>
+          <p class="text-muted small mb-0" id="confirmMsg"></p>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-outline-secondary flex-grow-1 btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn flex-grow-1 btn-sm fw-bold" id="confirmOkBtn">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     LOGIN
+════════════════════════════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🌾</div>
+    <h4 class="fw-bold text-center mb-1" style="color:#1b5e20;">Admin Panel</h4>
+    <p class="text-muted text-center small mb-4">Farmpilot AI</p>
+    <div id="loginError" class="alert alert-danger d-none small py-2"></div>
+    <div class="mb-3">
+      <label class="fw-semibold small mb-1 text-secondary">Email address</label>
+      <input type="email" id="loginEmail" class="form-control" placeholder="admin@example.com"/>
+    </div>
+    <div class="mb-4">
+      <label class="fw-semibold small mb-1 text-secondary">Password</label>
+      <input type="password" id="loginPass" class="form-control" placeholder="••••••••"
+             onkeydown="if(event.key==='Enter') doLogin()"/>
+    </div>
+    <button class="btn btn-success w-100 fw-bold py-2" onclick="doLogin()" id="loginBtn">
+      <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ADMIN APP
+════════════════════════════════════════════════════════════════ -->
+<div id="adminApp" style="display:none;">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">🌾</div>
+      <div class="brand-text">
+        <div class="brand-name">Crop Advisor</div>
+        <div class="brand-sub">Admin Panel</div>
+      </div>
+    </div>
+    <nav class="flex-grow-1 pt-2">
+      <div class="nav-section-label">Overview</div>
+      <a href="#" class="nav-link active" onclick="showPage('dashboard',this)">
+        <i class="bi bi-grid-fill"></i> Dashboard
+      </a>
+      <div class="nav-section-label">Management</div>
+      <a href="#" class="nav-link" onclick="showPage('queries',this)">
+        <i class="bi bi-chat-left-text-fill"></i> Contact Queries
+        <span id="pendingBadge" class="badge bg-danger nav-badge d-none" style="font-size:.65rem;"></span>
+      </a>
+      <a href="#" class="nav-link" onclick="showPage('users',this)">
+        <i class="bi bi-people-fill"></i> Users
+      </a>
+      <a href="#" class="nav-link" onclick="showPage('predictions',this)">
+        <i class="bi bi-graph-up-arrow"></i> Predictions
+      </a>
+      <a href="#" class="nav-link" onclick="showPage('iot',this)">
+        <i class="bi bi-cpu-fill"></i> IoT Devices
+        <span id="iotBadge" class="badge bg-success nav-badge d-none" style="font-size:.65rem;"></span>
+      </a>
+      <div class="nav-section-label">Tools</div>
+      <a href="#" class="nav-link" onclick="showPage('broadcast',this)">
+        <i class="bi bi-megaphone-fill"></i> Broadcast
+      </a>
+      <a href="#" class="nav-link" onclick="showPage('health',this)">
+        <i class="bi bi-heart-pulse-fill"></i> System Health
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+        <div>
+          <div class="sidebar-user-name" id="adminName">Admin</div>
+          <div class="sidebar-user-role">Administrator</div>
+        </div>
+      </div>
+      <button class="btn btn-sm w-100 fw-semibold"
+              style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);"
+              onclick="logout()">
+        <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <!-- Topbar -->
+    <div id="topbar">
+      <div class="topbar-breadcrumb">
+        <i class="bi bi-grid-fill text-success me-2" id="pageIcon" style="font-size:1rem;"></i>
+        <span class="page-title" id="pageTitle">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <div class="refresh-indicator d-none" id="autoRefreshIndicator" onclick="manualRefresh()" title="Auto-refresh · click to refresh now">
+          <div class="refresh-ring" id="refreshRing"><div class="refresh-ring-inner"></div></div>
+          <span id="refreshCountdown">30s</span>
+        </div>
+        <div class="topbar-clock" id="topbarClock"></div>
+        <span class="badge fw-semibold" style="background:#e8f5e9;color:#2e7d32;font-size:.72rem;">Admin</span>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD ──────────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-hero">
+        <div>
+          <div class="page-hero-chip"><i class="bi bi-stars"></i> Admin Workspace</div>
+          <div class="page-hero-title mt-3">Control center for users, predictions, and connected farms</div>
+          <p class="page-hero-sub">Track platform health, watch user activity, review support load, and monitor IoT devices from a cleaner single-pane admin experience.</p>
+        </div>
+        <div class="overview-grid" style="flex:1; min-width:260px; max-width:520px;">
+          <div class="mini-panel">
+            <div class="mini-panel-label">Auto Refresh</div>
+            <div class="mini-panel-value">Live every 30 seconds</div>
+          </div>
+          <div class="mini-panel">
+            <div class="mini-panel-label">Admin Scope</div>
+            <div class="mini-panel-value">Monitoring and user operations</div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3 mb-4" id="statsCards">
+        <!-- Skeleton stat cards -->
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="skeleton sk-row w-50 mb-2"></div><div class="skeleton sk-row" style="height:28px;width:60px;"></div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="skeleton sk-row w-50 mb-2"></div><div class="skeleton sk-row" style="height:28px;width:60px;"></div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="skeleton sk-row w-50 mb-2"></div><div class="skeleton sk-row" style="height:28px;width:60px;"></div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-card"><div class="skeleton sk-row w-50 mb-2"></div><div class="skeleton sk-row" style="height:28px;width:60px;"></div></div></div>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-5">
+          <div class="table-card h-100">
+            <div class="table-card-header">
+              <span class="fw-bold"><i class="bi bi-clock-history text-success me-2"></i>Recent Users</span>
+            </div>
+            <div id="recentUsers" style="padding:4px 0;">
+              <div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div><div class="skeleton sk-row w-90"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="table-card h-100">
+            <div class="table-card-header">
+              <span class="fw-bold"><i class="bi bi-bar-chart-fill text-success me-2"></i>Predictions by Type</span>
+            </div>
+            <div id="predByType" style="padding:8px 20px 12px;">
+              <div class="skeleton sk-row w-90 mt-3"></div><div class="skeleton sk-row w-75"></div><div class="skeleton sk-row w-90"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CONTACT QUERIES ───────────────────────────────────── -->
+    <div class="page" id="page-queries">
+      <div class="table-card">
+        <div class="table-card-header">
+          <div>
+            <div class="section-kicker">Support Desk</div>
+            <span class="fw-bold"><i class="bi bi-chat-left-text-fill text-success me-2"></i>Contact Queries</span>
+            <div class="helper-copy">Review farmer questions, reply faster, and keep statuses organized.</div>
+          </div>
+          <div class="d-flex gap-2 align-items-center ms-auto flex-wrap">
+            <select class="form-select form-select-sm search-input" id="queryStatusFilter" onchange="loadQueries()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in_review">In Review</option>
+              <option value="replied">Replied</option>
+              <option value="closed">Closed</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="loadQueries()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr><th>Name</th><th>Email</th><th>Subject</th><th>Status</th><th>Date</th><th></th></tr></thead>
+            <tbody id="queriesTable"><tr><td colspan="6"><div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></td></tr></tbody>
+          </table>
+        </div>
+        <div id="queriesPagination" class="p-3 d-flex justify-content-center gap-2 border-top"></div>
+      </div>
+    </div>
+
+    <!-- ── USERS ─────────────────────────────────────────────── -->
+    <div class="page" id="page-users">
+      <div class="table-card">
+        <div class="table-card-header">
+          <div>
+            <div class="section-kicker">People</div>
+            <span class="fw-bold"><i class="bi bi-people-fill text-success me-2"></i>Registered Users</span>
+            <div class="helper-copy">Search, filter, and manage account access without leaving the page.</div>
+          </div>
+          <div class="d-flex gap-2 align-items-center ms-auto flex-wrap">
+            <input type="search" id="userSearch" class="form-control form-control-sm search-input"
+                   placeholder="Search name or email…" oninput="debounceSearch()"/>
+            <select class="form-select form-select-sm" style="width:120px;" id="userRoleFilter" onchange="loadUsers()">
+              <option value="">All Roles</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="loadUsers()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportUsers()"><i class="bi bi-download me-1"></i>Export</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Predictions</th><th>Joined</th><th>Status</th><th></th></tr></thead>
+            <tbody id="usersTable"><tr><td colspan="7"><div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></td></tr></tbody>
+          </table>
+        </div>
+        <div id="usersPagination" class="p-3 d-flex justify-content-center gap-2 border-top"></div>
+      </div>
+    </div>
+
+    <!-- ── PREDICTIONS ───────────────────────────────────────── -->
+    <div class="page" id="page-predictions">
+      <div class="table-card">
+        <div class="table-card-header">
+          <div>
+            <div class="section-kicker">Model Activity</div>
+            <span class="fw-bold"><i class="bi bi-graph-up-arrow text-success me-2"></i>All Predictions</span>
+            <div class="helper-copy">Inspect model usage across crop, disease, irrigation, and fertilizer flows.</div>
+          </div>
+          <div class="d-flex gap-2 align-items-center ms-auto flex-wrap">
+            <select class="form-select form-select-sm" style="width:150px;" id="predTypeFilter" onchange="loadPredictions()">
+              <option value="">All Types</option>
+              <option value="crop">Crop</option>
+              <option value="disease">Disease</option>
+              <option value="irrigation">Irrigation</option>
+              <option value="fertilizer">Fertilizer</option>
+            </select>
+            <button class="btn btn-sm btn-outline-secondary btn-icon" onclick="loadPredictions()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportPredictions()"><i class="bi bi-download me-1"></i>Export</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr><th>Type</th><th>Top Result</th><th>Confidence</th><th>User</th><th>Duration</th><th>Date</th></tr></thead>
+            <tbody id="predsTable"><tr><td colspan="6"><div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></td></tr></tbody>
+          </table>
+        </div>
+        <div id="predsPagination" class="p-3 d-flex justify-content-center gap-2 border-top"></div>
+      </div>
+    </div>
+
+    <!-- ── IOT DEVICES ───────────────────────────────────────── -->
+    <div class="page" id="page-iot">
+      <div class="page-hero">
+        <div>
+          <div class="page-hero-chip"><i class="bi bi-cpu-fill"></i> Device Monitoring</div>
+          <div class="page-hero-title mt-3">Read-only fleet overview for ESP32 irrigation devices</div>
+          <p class="page-hero-sub">Admins can monitor connectivity, power state, telemetry, and ownership here. Motor control remains available only in the user IoT panel.</p>
+        </div>
+      </div>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <span class="fw-bold" id="iotSummaryText">All Devices</span>
+          <span class="text-muted small ms-2" id="iotOnlineCount"></span>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="loadIot()"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+      </div>
+      <div class="row g-3" id="iotGrid">
+        <div class="col-12"><div class="p-4"><div class="skeleton sk-row w-75"></div><div class="skeleton sk-row w-50"></div></div></div>
+      </div>
+    </div>
+
+    <!-- ── BROADCAST ─────────────────────────────────────────── -->
+    <div class="page" id="page-broadcast">
+      <div class="row justify-content-center">
+        <div class="col-xl-10">
+          <div class="broadcast-shell">
+            <div class="broadcast-hero">
+              <div class="hero-tag"><i class="bi bi-megaphone-fill"></i> Community Broadcast</div>
+              <h5>Reach every active farmer with a clearer, friendlier announcement</h5>
+              <p>Draft updates with a strong title, a short action message, and a quick preview before sending. This layout is designed to make admin communication faster and less error-prone.</p>
+            </div>
+
+            <div class="broadcast-body">
+              <div class="broadcast-grid">
+                <div class="broadcast-card">
+                  <div class="broadcast-card-title">
+                    <div>
+                      <div class="section-kicker mb-1">Communication</div>
+                      <h6><i class="bi bi-pencil-square text-success me-2"></i>Compose Broadcast</h6>
+                    </div>
+                    <div class="broadcast-muted">Sent as an in-app alert to all active users</div>
+                  </div>
+
+                  <div class="broadcast-templates">
+                    <button type="button" class="template-chip" onclick="applyBroadcastTemplate('maintenance')">Scheduled maintenance</button>
+                    <button type="button" class="template-chip" onclick="applyBroadcastTemplate('weather')">Weather warning</button>
+                    <button type="button" class="template-chip" onclick="applyBroadcastTemplate('feature')">New feature</button>
+                    <button type="button" class="template-chip" onclick="applyBroadcastTemplate('advisory')">Farming advisory</button>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="broadcast-label">
+                      <span>Title <span class="text-danger">*</span></span>
+                      <span id="bcTitleCount">0/80</span>
+                    </label>
+                    <input type="text" id="bcTitle" class="form-control broadcast-input" maxlength="80" placeholder="e.g. Heavy Rain Advisory for Punjab Region" oninput="updateBroadcastPreview()"/>
+                    <div class="broadcast-helper">
+                      <span>Use a short headline that tells users exactly what changed.</span>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="broadcast-label">
+                      <span>Message <span class="text-danger">*</span></span>
+                      <span id="bcMessageCount">0/240</span>
+                    </label>
+                    <textarea id="bcMessage" rows="6" maxlength="240" class="form-control broadcast-textarea" placeholder="Explain what happened, who is affected, and what action users should take next." oninput="updateBroadcastPreview()"></textarea>
+                    <div class="broadcast-helper">
+                      <span>Best results: keep it clear, direct, and actionable.</span>
+                      <span id="bcReadTime">Approx. 0 sec read</span>
+                    </div>
+                  </div>
+
+                  <div class="broadcast-stat-row">
+                    <div class="broadcast-stat">
+                      <div class="val" id="bcWords">0</div>
+                      <div class="lbl">Words</div>
+                    </div>
+                    <div class="broadcast-stat">
+                      <div class="val" id="bcTone">Drafting</div>
+                      <div class="lbl">Message Tone</div>
+                    </div>
+                    <div class="broadcast-stat">
+                      <div class="val" id="bcStatusHint">Needs title</div>
+                      <div class="lbl">Ready Check</div>
+                    </div>
+                  </div>
+
+                  <div class="broadcast-actions">
+                    <button class="btn btn-success flex-grow-1" onclick="sendBroadcast()" id="bcBtn">
+                      <i class="bi bi-send-fill me-2"></i>Send to All Users
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" onclick="clearBroadcastComposer()">
+                      <i class="bi bi-arrow-counterclockwise me-2"></i>Clear
+                    </button>
+                  </div>
+                  <div id="bcResult" class="mt-3 d-none"></div>
+                </div>
+
+                <div class="broadcast-card preview-card">
+                  <div class="broadcast-card-title">
+                    <div>
+                      <div class="section-kicker mb-1">Preview</div>
+                      <h6><i class="bi bi-phone-fill text-success me-2"></i>What users will see</h6>
+                    </div>
+                    <div class="broadcast-muted">Live preview updates while you type</div>
+                  </div>
+
+                  <div class="preview-phone">
+                    <div class="preview-pill"></div>
+                    <div id="bcPreviewContent">
+                      <div class="preview-empty">
+                        <i class="bi bi-chat-square-text d-block mb-2" style="font-size:1.3rem;color:#8aa18d;"></i>
+                        Start typing to preview your broadcast notification.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="tone-list">
+                    <div class="tone-item">
+                      <i class="bi bi-check2-circle"></i>
+                      <div>Lead with the most important update first so farmers can act quickly.</div>
+                    </div>
+                    <div class="tone-item">
+                      <i class="bi bi-check2-circle"></i>
+                      <div>Use simple language and mention the action users should take next.</div>
+                    </div>
+                    <div class="tone-item">
+                      <i class="bi bi-check2-circle"></i>
+                      <div>For urgent notices, keep the title direct and the message short.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SYSTEM HEALTH ─────────────────────────────────────── -->
+    <div class="page" id="page-health">
+      <div class="page-hero">
+        <div>
+          <div class="page-hero-chip"><i class="bi bi-heart-pulse-fill"></i> Reliability</div>
+          <div class="page-hero-title mt-3">Operational health snapshot for the full platform</div>
+          <p class="page-hero-sub">Check Node, MongoDB, ML backend, and runtime memory at a glance before users feel an issue.</p>
+        </div>
+      </div>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <span class="fw-bold"><i class="bi bi-heart-pulse-fill text-success me-2"></i>System Health</span>
+        <div class="d-flex align-items-center gap-3">
+          <span class="text-muted small" id="healthLastRefresh"></span>
+          <button class="btn btn-sm btn-outline-secondary" onclick="loadHealth()"><i class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+        </div>
+      </div>
+      <div id="healthContent">
+        <div class="row g-3">
+          <div class="col-md-4"><div class="health-card"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div><div class="skeleton sk-row w-90"></div></div></div>
+          <div class="col-md-4"><div class="health-card"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></div>
+          <div class="col-md-4"><div class="health-card"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /adminApp -->
+
+<!-- Reply Modal -->
+<div class="modal fade" id="replyModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 20px 60px rgba(0,0,0,0.18);">
+      <div class="modal-header border-0 pb-0 px-4 pt-4">
+        <h6 class="modal-title fw-bold">Reply to Query</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 pb-4">
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6">
+            <div class="text-muted" style="font-size:.7rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;">From</div>
+            <div id="replyFrom" class="fw-semibold" style="font-size:.9rem;"></div>
+          </div>
+          <div class="col-sm-6">
+            <div class="text-muted" style="font-size:.7rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;">Subject</div>
+            <div id="replySubject" class="fw-semibold" style="font-size:.9rem;"></div>
+          </div>
+        </div>
+        <div class="text-muted mb-1" style="font-size:.7rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;">Message</div>
+        <div class="query-bubble mb-3" id="replyOrigMsg"></div>
+        <div id="prevReplies"></div>
+        <hr class="my-3"/>
+        <div class="mb-3">
+          <label class="fw-semibold small mb-1 text-secondary">Your Reply <span class="text-danger">*</span></label>
+          <textarea id="replyText" rows="5" class="form-control" placeholder="Write your reply..."></textarea>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-success fw-bold flex-grow-1" onclick="submitReply()" id="replyBtn">
+            <i class="bi bi-send-fill me-2"></i>Send Reply
+          </button>
+          <select class="form-select" style="max-width:160px;font-size:.85rem;" id="replyStatus">
+            <option value="replied">Mark Replied</option>
+            <option value="in_review">In Review</option>
+            <option value="closed">Close</option>
+          </select>
+        </div>
+        <div id="replyResult" class="mt-2 d-none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let TOKEN = localStorage.getItem('adminToken') || '';
+let currentQueryId = null;
+let currentPage    = 'dashboard';
+let refreshTimer   = null;
+let refreshSeconds = 30;
+let userSearchTimer = null;
+
+// ─── API helper ───────────────────────────────────────────────────────────────
+const API = (path, opts = {}) => {
+  const headers = { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}) };
+  return fetch(`/api${path}`, { headers, ...opts }).then(async r => {
+    const json = await r.json();
+    if (r.status === 401) { logout(); return; }
+    if (!r.ok) throw new Error(json.error?.message || 'Request failed');
+    return json.data ?? json;
+  });
+};
+
+// ─── Toast system ─────────────────────────────────────────────────────────────
+const toastIcons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+function toast(type, title, msg = '') {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.innerHTML = `
+    <span class="toast-icon">${toastIcons[type] || 'ℹ️'}</span>
+    <div class="toast-body">
+      <div class="toast-title">${esc(title)}</div>
+      ${msg ? `<div class="toast-msg">${esc(msg)}</div>` : ''}
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'slideOut 0.2s ease forwards';
+    setTimeout(() => el.remove(), 200);
+  }, 4000);
+}
+
+// ─── Confirm modal ────────────────────────────────────────────────────────────
+function confirm(title, msg, dangerLabel = 'Confirm', variant = 'btn-danger') {
+  return new Promise(resolve => {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent   = msg;
+    const btn = document.getElementById('confirmOkBtn');
+    btn.textContent = dangerLabel;
+    btn.className   = `btn flex-grow-1 btn-sm fw-bold ${variant}`;
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModal'));
+    const handler = () => { modal.hide(); resolve(true); };
+    btn.onclick = handler;
+    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', () => resolve(false), { once: true });
+    modal.show();
+  });
+}
+
+// ─── Clock ────────────────────────────────────────────────────────────────────
+function startClock() {
+  const update = () => {
+    const now = new Date();
+    document.getElementById('topbarClock').innerHTML =
+      `${now.toLocaleTimeString('en-IN', { hour12: true })}<br>
+       <span style="font-size:.7rem;">${now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span>`;
+  };
+  update(); setInterval(update, 1000);
+}
+
+// ─── Auto-refresh ─────────────────────────────────────────────────────────────
+function startAutoRefresh() {
+  document.getElementById('autoRefreshIndicator').classList.remove('d-none');
+  refreshSeconds = 30;
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    refreshSeconds--;
+    document.getElementById('refreshCountdown').textContent = refreshSeconds + 's';
+    const pct = ((30 - refreshSeconds) / 30) * 100;
+    document.getElementById('refreshRing').style.background =
+      `conic-gradient(#43a047 ${pct}%, #e8f5e9 0%)`;
+    if (refreshSeconds <= 0) manualRefresh();
+  }, 1000);
+}
+
+function stopAutoRefresh() {
+  clearInterval(refreshTimer);
+  document.getElementById('autoRefreshIndicator').classList.add('d-none');
+}
+
+function manualRefresh() {
+  refreshSeconds = 30;
+  document.getElementById('refreshCountdown').textContent = '30s';
+  document.getElementById('refreshRing').style.background = 'conic-gradient(#43a047 0%, #e8f5e9 0%)';
+  const loaders = { dashboard: loadDashboard, health: loadHealth, iot: loadIot };
+  if (loaders[currentPage]) loaders[currentPage]();
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  startClock();
+  if (TOKEN) showApp();
+};
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('d-none');
+  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.classList.remove('d-none'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in…';
+  try {
+    const data = await API('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pass }) });
+    if (data?.user?.role !== 'admin') throw new Error('Access denied — admin account required');
+    TOKEN = data.accessToken;
+    localStorage.setItem('adminToken', TOKEN);
+    showApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('d-none');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Sign In';
+  }
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminApp').style.display    = 'flex';
+  try {
+    const p = JSON.parse(atob(TOKEN.split('.')[1]));
+    const name = p.name || 'Admin';
+    document.getElementById('adminName').textContent   = name;
+    document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
+  } catch {}
+  updateBroadcastPreview();
+  loadDashboard();
+  startAutoRefresh();
+}
+
+function logout() {
+  TOKEN = '';
+  localStorage.removeItem('adminToken');
+  location.reload();
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+const pageIcons = {
+  dashboard: 'bi-grid-fill', queries: 'bi-chat-left-text-fill',
+  users: 'bi-people-fill', predictions: 'bi-graph-up-arrow',
+  iot: 'bi-cpu-fill', broadcast: 'bi-megaphone-fill', health: 'bi-heart-pulse-fill',
+};
+function showPage(name, link) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (link) link.classList.add('active');
+  const title = link?.querySelector('i')?.nextSibling?.textContent?.trim() || name;
+  document.getElementById('pageTitle').textContent = title;
+  document.getElementById('pageIcon').className    = `bi ${pageIcons[name] || 'bi-grid'} text-success me-2`;
+  currentPage = name;
+  if (['dashboard','health','iot'].includes(name)) { startAutoRefresh(); } else { stopAutoRefresh(); }
+  const loaders = { queries: loadQueries, users: loadUsers, predictions: loadPredictions, health: loadHealth, iot: loadIot };
+  if (loaders[name]) loaders[name]();
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await API('/admin/stats');
+
+    // Badge
+    if (d.queries.pending > 0) {
+      const b = document.getElementById('pendingBadge');
+      b.textContent = d.queries.pending; b.classList.remove('d-none');
+    }
+    if (d.devices?.online > 0) {
+      const b = document.getElementById('iotBadge');
+      b.textContent = d.devices.online + ' online'; b.classList.remove('d-none');
+    }
+
+    // Stat cards
+    document.getElementById('statsCards').innerHTML = `
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="stat-icon" style="background:#e8f5e9;"><i class="bi bi-people-fill text-success"></i></div>
+            <div>
+              <div class="stat-label">Total Users</div>
+              <div class="stat-value">${d.users.total}</div>
+            </div>
+          </div>
+          <div class="stat-sub"><span class="up">${d.users.active} active</span> · ${d.users.total - d.users.active} inactive</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="stat-icon" style="background:#e3f2fd;"><i class="bi bi-graph-up-arrow" style="color:#1565c0;"></i></div>
+            <div>
+              <div class="stat-label">Predictions</div>
+              <div class="stat-value">${d.predictions.total}</div>
+            </div>
+          </div>
+          <div class="stat-sub">${Object.keys(d.predictions.byType||{}).length} types tracked</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="stat-icon" style="background:#fff3e0;"><i class="bi bi-chat-left-dots-fill" style="color:#e65100;"></i></div>
+            <div>
+              <div class="stat-label">Pending Queries</div>
+              <div class="stat-value">${d.queries.pending}</div>
+            </div>
+          </div>
+          <div class="stat-sub">${d.queries.total} total queries</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="stat-icon" style="background:#f3e5f5;"><i class="bi bi-cpu-fill" style="color:#7b1fa2;"></i></div>
+            <div>
+              <div class="stat-label">IoT Devices</div>
+              <div class="stat-value">${d.devices?.total ?? 0}</div>
+            </div>
+          </div>
+          <div class="stat-sub"><span class="up">${d.devices?.online ?? 0} online</span> · last 5 min</div>
+        </div>
+      </div>
+    `;
+
+    // Recent users
+    document.getElementById('recentUsers').innerHTML = d.users.recent.length
+      ? d.users.recent.map(u => `
+        <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom">
+          <div class="avatar-sm">${esc(u.name[0].toUpperCase())}</div>
+          <div class="flex-grow-1 overflow-hidden">
+            <div class="fw-semibold small text-truncate">${esc(u.name)}</div>
+            <div class="text-muted" style="font-size:.75rem;">${esc(u.email)}</div>
+          </div>
+          <span class="badge badge-pill ${u.role==='admin'?'bg-danger':'bg-success'}">${u.role}</span>
+        </div>
+      `).join('')
+      : `<div class="empty-state"><i class="bi bi-people"></i><p>No users yet</p></div>`;
+
+    // Predictions by type
+    const types = d.predictions.byType || {};
+    const typeColors = { crop:'#43a047', disease:'#e53935', irrigation:'#1e88e5', fertilizer:'#fb8c00' };
+    const typeIcons  = { crop:'🌾', disease:'🔬', irrigation:'💧', fertilizer:'🧪' };
+    document.getElementById('predByType').innerHTML = Object.keys(types).length
+      ? Object.entries(types).map(([k, v]) => `
+        <div class="d-flex align-items-center gap-3 py-2">
+          <span style="font-size:1.1rem;">${typeIcons[k]||'📊'}</span>
+          <span class="text-capitalize" style="width:90px;font-size:.875rem;">${k}</span>
+          <div class="flex-grow-1">
+            <div class="progress progress-thin">
+              <div class="progress-bar" style="width:${Math.min(100,v/(d.predictions.total||1)*100)}%;background:${typeColors[k]||'#999'};"></div>
+            </div>
+          </div>
+          <span class="fw-bold small" style="width:36px;text-align:right;">${v}</span>
+        </div>
+      `).join('')
+      : `<div class="empty-state"><i class="bi bi-bar-chart"></i><p>No predictions yet</p></div>`;
+
+  } catch (err) {
+    toast('error', 'Dashboard failed', err.message);
+  }
+}
+
+// ─── Contact Queries ──────────────────────────────────────────────────────────
+let queriesPage = 1;
+async function loadQueries(page = 1) {
+  queriesPage = page;
+  const status = document.getElementById('queryStatusFilter').value;
+  const qs = new URLSearchParams({ page, limit: 15, ...(status && { status }) });
+  const tbody = document.getElementById('queriesTable');
+  tbody.innerHTML = `<tr><td colspan="6"><div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></td></tr>`;
+  try {
+    const d = await API(`/admin/queries?${qs}`);
+    if (!d.queries.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-chat-left-text"></i><p>No queries found</p></div></td></tr>`;
+      document.getElementById('queriesPagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = d.queries.map(q => `
+      <tr>
+        <td><span class="fw-semibold">${esc(q.name)}</span></td>
+        <td class="text-muted">${esc(q.email)}</td>
+        <td class="text-truncate" style="max-width:180px;">${esc(q.subject)}</td>
+        <td><span class="badge-pill s-${q.status}">${q.status.replace('_',' ')}</span></td>
+        <td class="text-muted" style="font-size:.8rem;">${fmtDate(q.createdAt)}</td>
+        <td><button class="btn btn-sm btn-outline-success" style="font-size:.78rem;" onclick="openReply('${q._id}')"><i class="bi bi-reply-fill me-1"></i>Reply</button></td>
+      </tr>
+    `).join('');
+    renderPagination('queriesPagination', d.pages, page, loadQueries);
+  } catch (err) { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">${esc(err.message)}</td></tr>`; }
+}
+
+async function openReply(queryId) {
+  currentQueryId = queryId;
+  document.getElementById('replyText').value = '';
+  document.getElementById('replyResult').classList.add('d-none');
+  document.getElementById('replyFrom').textContent = 'Loading…';
+  new bootstrap.Modal(document.getElementById('replyModal')).show();
+  try {
+    const q = await API(`/admin/queries/${queryId}`);
+    document.getElementById('replyFrom').innerHTML = `<strong>${esc(q.name)}</strong> &lt;${esc(q.email)}&gt;`;
+    document.getElementById('replySubject').textContent = q.subject;
+    document.getElementById('replyOrigMsg').textContent = q.message;
+    document.getElementById('prevReplies').innerHTML = q.replies?.length
+      ? q.replies.map(r => `
+        <div class="reply-bubble mb-2">
+          <div class="d-flex justify-content-between align-items-start mb-1">
+            <span class="fw-semibold small text-success">${esc(r.sentBy)}</span>
+            <span class="text-muted" style="font-size:.72rem;">${fmtDate(r.sentAt)}</span>
+          </div>
+          <div style="font-size:.875rem;">${esc(r.message)}</div>
+          <div class="mt-1 text-muted" style="font-size:.72rem;">${r.emailDelivered ? '✅ Email delivered' : '⚠️ Email not sent'}</div>
+        </div>
+      `).join('') : '';
+  } catch (err) { toast('error', 'Failed to load query', err.message); }
+}
+
+async function submitReply() {
+  const message = document.getElementById('replyText').value.trim();
+  if (!message) { toast('warning', 'Reply required', 'Please write a reply first.'); return; }
+  const btn = document.getElementById('replyBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending…';
+  try {
+    const data = await API(`/admin/queries/${currentQueryId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ message, adminName: document.getElementById('adminName').textContent }),
+    });
+    await API(`/admin/queries/${currentQueryId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: document.getElementById('replyStatus').value }),
+    });
+    toast(data.emailDelivered ? 'success' : 'warning',
+      data.emailDelivered ? 'Reply sent' : 'Reply saved',
+      data.emailDelivered ? 'Email delivered to user.' : 'Email could not be delivered (check SMTP).');
+    bootstrap.Modal.getInstance(document.getElementById('replyModal')).hide();
+    loadQueries(queriesPage);
+    loadDashboard();
+  } catch (err) {
+    toast('error', 'Send failed', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Reply';
+  }
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+let usersPage = 1;
+async function loadUsers(page = 1) {
+  usersPage = page;
+  const search = document.getElementById('userSearch').value.trim();
+  const role   = document.getElementById('userRoleFilter').value;
+  const qs = new URLSearchParams({ page, limit: 20, ...(search && { search }), ...(role && { role }) });
+  const tbody = document.getElementById('usersTable');
+  tbody.innerHTML = `<tr><td colspan="7"><div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></td></tr>`;
+  try {
+    const d = await API(`/admin/users?${qs}`);
+    if (!d.users.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i><p>No users found</p></div></td></tr>`;
+      document.getElementById('usersPagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = d.users.map(u => `
+      <tr>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div class="avatar-sm" style="background:${strColor(u.name)};">${esc(u.name[0].toUpperCase())}</div>
+            <span class="fw-semibold">${esc(u.name)}</span>
+          </div>
+        </td>
+        <td class="text-muted">${esc(u.email)}</td>
+        <td><span class="badge badge-pill ${u.role==='admin'?'bg-danger':'bg-success'}">${u.role}</span></td>
+        <td>${u.totalPredictions ?? '—'}</td>
+        <td class="text-muted" style="font-size:.8rem;">${fmtDate(u.createdAt)}</td>
+        <td><span class="badge badge-pill ${u.isActive?'bg-success':'bg-secondary'}" style="background:${u.isActive?'#e8f5e9':'#f5f5f5'}!important;color:${u.isActive?'#2e7d32':'#757575'};">${u.isActive?'Active':'Disabled'}</span></td>
+        <td>
+          <button class="btn btn-sm ${u.isActive?'btn-outline-danger':'btn-outline-success'}" style="font-size:.78rem;"
+                  onclick="toggleUser('${u._id}',${u.isActive},'${esc(u.name)}')">
+            ${u.isActive ? 'Disable' : 'Enable'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+    renderPagination('usersPagination', d.pages, page, loadUsers);
+  } catch (err) { tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-3">${esc(err.message)}</td></tr>`; }
+}
+
+let _searchDebounce = null;
+function debounceSearch() {
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(() => loadUsers(1), 350);
+}
+
+async function toggleUser(id, isActive, name) {
+  const ok = await confirm(
+    isActive ? `Disable ${name}?` : `Enable ${name}?`,
+    isActive ? 'This user will lose access to the platform.' : 'This user will regain full access.',
+    isActive ? 'Disable' : 'Enable',
+    isActive ? 'btn-danger' : 'btn-success'
+  );
+  if (!ok) return;
+  try {
+    await API(`/admin/users/${id}/toggle`, { method: 'PATCH' });
+    toast('success', isActive ? 'User disabled' : 'User enabled', name);
+    loadUsers(usersPage);
+  } catch (err) { toast('error', 'Action failed', err.message); }
+}
+
+function exportUsers() {
+  const rows = [['Name','Email','Role','Predictions','Joined','Status']];
+  document.querySelectorAll('#usersTable tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('td')];
+    if (cells.length) rows.push(cells.map(td => td.innerText.trim()));
+  });
+  downloadCSV(rows, 'users.csv');
+}
+
+// ─── Predictions ──────────────────────────────────────────────────────────────
+let predsPage = 1;
+async function loadPredictions(page = 1) {
+  predsPage = page;
+  const type = document.getElementById('predTypeFilter').value;
+  const qs = new URLSearchParams({ page: 1, limit: 30, ...(type && { type }) });
+  const tbody = document.getElementById('predsTable');
+  tbody.innerHTML = `<tr><td colspan="6"><div class="p-4"><div class="skeleton sk-row w-90"></div><div class="skeleton sk-row w-75"></div></div></td></tr>`;
+  const icons = { crop:'🌾', disease:'🔬', irrigation:'💧', fertilizer:'🧪' };
+  try {
+    const d = await API(`/predictions?${qs}`);
+    const preds = d.predictions || d;
+    if (!preds.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-graph-up"></i><p>No predictions yet</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = preds.map(p => `
+      <tr>
+        <td>${icons[p.type]||'📊'} <span class="text-capitalize fw-semibold">${p.type}</span></td>
+        <td class="fw-semibold">${esc(p.summary?.topCrop || p.summary?.disease || (p.summary?.irrigationNeeded!=null?(p.summary.irrigationNeeded?'Needed':'Not needed'):'—'))}</td>
+        <td>${p.summary?.confidence != null ? `<span class="fw-bold">${p.summary.confidence}%</span>` : '—'}</td>
+        <td class="text-muted" style="font-size:.8rem;">${esc(p.userName || p.userId || 'Anonymous')}</td>
+        <td class="text-muted" style="font-size:.8rem;">${p.durationMs ? p.durationMs+'ms' : '—'}</td>
+        <td class="text-muted" style="font-size:.8rem;">${fmtDate(p.createdAt)}</td>
+      </tr>
+    `).join('');
+  } catch (err) { tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">${esc(err.message)}</td></tr>`; }
+}
+
+function exportPredictions() {
+  const rows = [['Type','Top Result','Confidence','User','Duration','Date']];
+  document.querySelectorAll('#predsTable tr').forEach(tr => {
+    const cells = [...tr.querySelectorAll('td')];
+    if (cells.length) rows.push(cells.map(td => td.innerText.trim()));
+  });
+  downloadCSV(rows, 'predictions.csv');
+}
+
+// ─── IoT Devices ──────────────────────────────────────────────────────────────
+async function loadIot() {
+  const grid = document.getElementById('iotGrid');
+  grid.innerHTML = `<div class="col-12"><div class="p-4"><div class="skeleton sk-row w-75"></div><div class="skeleton sk-row w-50"></div></div></div>`;
+  try {
+    const d = await API('/admin/devices');
+    const devices = d.devices || [];
+    document.getElementById('iotOnlineCount').textContent =
+      `${devices.filter(x => x.online).length} / ${devices.length} online`;
+
+    if (!devices.length) {
+      grid.innerHTML = `<div class="col-12"><div class="empty-state"><i class="bi bi-cpu"></i><p>No IoT devices registered yet</p></div></div>`;
+      return;
+    }
+    grid.innerHTML = devices.map(dev => {
+      const s = dev.latestSensor;
+      const since = dev.lastSeen ? timeSince(new Date(dev.lastSeen)) : 'never';
+      return `
+      <div class="col-md-6 col-xl-4">
+        <div class="device-card">
+          <div class="device-header">
+            <div>
+              <div class="device-id">${esc(dev.deviceId)}</div>
+              <div class="text-muted" style="font-size:.75rem;">
+                ${dev.userId ? `${esc(dev.userId.name||'')} &lt;${esc(dev.userId.email||'')}&gt;` : '<span class="text-warning">Unclaimed</span>'}
+              </div>
+            </div>
+            <div class="text-end">
+              <div>${dev.online
+                ? '<span class="online-dot"></span><span class="text-success fw-semibold" style="font-size:.78rem;">Online</span>'
+                : '<span class="offline-dot"></span><span class="text-muted" style="font-size:.78rem;">Offline</span>'
+              }</div>
+              <div class="text-muted" style="font-size:.7rem;">seen ${since}</div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 align-items-center mb-2">
+            <span class="badge badge-pill ${dev.motorState==='ON'?'bg-success':'bg-secondary'}" style="background:${dev.motorState==='ON'?'#e8f5e9':'#f5f5f5'}!important;color:${dev.motorState==='ON'?'#2e7d32':'#757575'};">
+              <i class="bi bi-droplet-half me-1"></i>Motor ${dev.motorState||'OFF'}
+            </span>
+            <span class="badge badge-pill" style="background:#e3f2fd;color:#1565c0;">
+              <i class="bi bi-power me-1"></i>Power ${dev.powerState||'OFF'}
+            </span>
+          </div>
+          ${s ? `
+          <div class="sensor-grid">
+            <div class="sensor-chip"><div class="val">${s.flow!=null?s.flow.toFixed(1):'—'}</div><div class="lbl">L/min</div></div>
+            <div class="sensor-chip"><div class="val">${s.current!=null?s.current:'—'}</div><div class="lbl">Current</div></div>
+            <div class="sensor-chip"><div class="val">${s.rain!=null?(s.rain?'Yes':'No'):'—'}</div><div class="lbl">Rain</div></div>
+          </div>` : `<div class="text-muted small mt-2">No sensor data yet</div>`}
+          <div class="mt-3 text-muted small">
+            <i class="bi bi-shield-lock me-1"></i>Motor control is available only in the user IoT panel.
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    grid.innerHTML = `<div class="col-12 text-danger">${esc(err.message)}</div>`;
+  }
+}
+
+// ─── Broadcast ────────────────────────────────────────────────────────────────
+const BROADCAST_TEMPLATES = {
+  maintenance: {
+    title: 'Scheduled Maintenance Tonight',
+    message: 'The platform will undergo scheduled maintenance from 10:00 PM to 10:30 PM. Predictions and IoT sync may be briefly unavailable during this window.'
+  },
+  weather: {
+    title: 'Heavy Rain Advisory for Nearby Farms',
+    message: 'Rainfall is expected in the next few hours. Please review irrigation schedules and avoid unnecessary watering until weather conditions improve.'
+  },
+  feature: {
+    title: 'New Smart Irrigation Update Available',
+    message: 'We have improved irrigation recommendations with faster predictions and better field-condition handling. Open the Predict page to try the updated experience.'
+  },
+  advisory: {
+    title: 'Crop Care Advisory for This Week',
+    message: 'Please monitor soil moisture, disease symptoms, and fertilizer plans closely this week. Review your dashboards and respond early to field changes.'
+  }
+};
+
+function updateBroadcastPreview() {
+  const titleEl = document.getElementById('bcTitle');
+  const messageEl = document.getElementById('bcMessage');
+  if (!titleEl || !messageEl) return;
+
+  const title = titleEl.value.trim();
+  const message = messageEl.value.trim();
+  const words = message ? message.split(/\s+/).filter(Boolean).length : 0;
+  const chars = message.length;
+  const readTime = Math.max(0, Math.ceil(words / 3));
+
+  document.getElementById('bcTitleCount').textContent = `${title.length}/80`;
+  document.getElementById('bcMessageCount').textContent = `${chars}/240`;
+  document.getElementById('bcWords').textContent = String(words);
+  document.getElementById('bcReadTime').textContent = `Approx. ${readTime} sec read`;
+
+  let tone = 'Drafting';
+  if (chars > 0 && chars < 80) tone = 'Concise';
+  if (chars >= 80) tone = 'Detailed';
+  if (/urgent|immediately|alert|warning|important/i.test(`${title} ${message}`)) tone = 'Urgent';
+  document.getElementById('bcTone').textContent = tone;
+
+  let statusHint = 'Needs title';
+  if (title && !message) statusHint = 'Needs message';
+  if (title && message) statusHint = 'Ready to send';
+  document.getElementById('bcStatusHint').textContent = statusHint;
+
+  const preview = document.getElementById('bcPreviewContent');
+  if (!title && !message) {
+    preview.innerHTML = `
+      <div class="preview-empty">
+        <i class="bi bi-chat-square-text d-block mb-2" style="font-size:1.3rem;color:#8aa18d;"></i>
+        Start typing to preview your broadcast notification.
+      </div>`;
+    return;
+  }
+
+  preview.innerHTML = `
+    <div class="preview-notice">
+      <div class="preview-head">
+        <div class="preview-icon"><i class="bi bi-megaphone-fill"></i></div>
+        <div>
+          <div class="fw-bold" style="font-size:.82rem;color:#243327;">Crop Advisor Admin</div>
+          <div class="preview-meta">In-app notification • Just now</div>
+        </div>
+      </div>
+      <div class="preview-title">${esc(title || 'Untitled broadcast')}</div>
+      <div class="preview-message">${esc(message || 'Your message preview will appear here.')}</div>
+    </div>`;
+}
+
+function applyBroadcastTemplate(key) {
+  const template = BROADCAST_TEMPLATES[key];
+  if (!template) return;
+  document.getElementById('bcTitle').value = template.title;
+  document.getElementById('bcMessage').value = template.message;
+  updateBroadcastPreview();
+}
+
+function clearBroadcastComposer() {
+  document.getElementById('bcTitle').value = '';
+  document.getElementById('bcMessage').value = '';
+  updateBroadcastPreview();
+}
+
+async function sendBroadcast() {
+  const title   = document.getElementById('bcTitle').value.trim();
+  const message = document.getElementById('bcMessage').value.trim();
+  if (!title || !message) { toast('warning', 'Missing fields', 'Title and message are required.'); return; }
+  const ok = await confirm('Send broadcast?', `Will be sent to all active users.\n\nTitle: "${title}"`, 'Send Now', 'btn-success');
+  if (!ok) return;
+  const btn = document.getElementById('bcBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending…';
+  try {
+    const d = await API('/admin/broadcast', { method: 'POST', body: JSON.stringify({ title, message }) });
+    toast('success', 'Broadcast sent', `Delivered to ${d.sent} users.`);
+    clearBroadcastComposer();
+  } catch (err) { toast('error', 'Broadcast failed', err.message); }
+  finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send to All Users';
+  }
+}
+
+// ─── Health ───────────────────────────────────────────────────────────────────
+async function loadHealth() {
+  document.getElementById('healthLastRefresh').textContent = '';
+  try {
+    const headers = TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {};
+    const res = await fetch('/health/detailed', { headers });
+    if (!res.ok) throw new Error('Health check failed');
+    const json = await res.json();
+    const d   = json.data ?? json;
+    const svc = d.services || {};
+    const dot  = (ok) => `<span class="svc-dot" style="background:${ok?'#43a047':'#e53935'};"></span>`;
+    const tag  = (ok, yes, no) => `<span class="badge badge-pill" style="background:${ok?'#e8f5e9':'#fce4ec'};color:${ok?'#2e7d32':'#c62828'};">${ok?yes:no}</span>`;
+    const mb   = (b) => (b ?? 0).toFixed(1) + ' MB';
+
+    document.getElementById('healthContent').innerHTML = `
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="health-card">
+            <div class="fw-bold mb-3" style="font-size:.9rem;"><i class="bi bi-server text-success me-2"></i>Services</div>
+            <div class="svc-row"><span>${dot(true)} Node.js Server</span>${tag(true,'Running','Down')}</div>
+            <div class="svc-row"><span>${dot(svc.mongodb?.connected)} MongoDB</span>${tag(svc.mongodb?.connected,'Connected','Disconnected')}</div>
+            <div class="svc-row"><span>${dot(svc.ml_backend?.ok)} ML Backend</span>${tag(svc.ml_backend?.ok, svc.ml_backend?.latency_ms+'ms','Down')}</div>
+            <div class="svc-row"><span>${dot(svc.smtp?.ok)} SMTP Email</span>${tag(svc.smtp?.ok,'Configured','Not configured')}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="health-card">
+            <div class="fw-bold mb-3" style="font-size:.9rem;"><i class="bi bi-cpu text-success me-2"></i>Runtime</div>
+            <div class="svc-row"><span>Uptime</span><span class="fw-semibold">${fmtUptime(d.uptime_seconds)}</span></div>
+            <div class="svc-row"><span>Node.js</span><span class="fw-semibold">${d.node_version}</span></div>
+            <div class="svc-row"><span>Heap Used</span><span class="fw-semibold">${mb(d.system?.heap_used_mb)}</span></div>
+            <div class="svc-row"><span>RSS Memory</span><span class="fw-semibold">${mb(d.system?.rss_mb)}</span></div>
+            <div class="svc-row"><span>Free Sys Memory</span><span class="fw-semibold">${mb(d.system?.free_memory_mb)}</span></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="health-card">
+            <div class="fw-bold mb-3" style="font-size:.9rem;"><i class="bi bi-lightning-charge text-success me-2"></i>Cache</div>
+            <div class="svc-row"><span>Keys Stored</span><span class="fw-semibold">${d.cache?.keys ?? '—'}</span></div>
+            <div class="svc-row"><span>Cache Hits</span><span class="fw-semibold text-success">${d.cache?.hits ?? '—'}</span></div>
+            <div class="svc-row"><span>Cache Misses</span><span class="fw-semibold text-danger">${d.cache?.misses ?? '—'}</span></div>
+            <div class="svc-row"><span>Hit Rate</span>
+              <span class="badge badge-pill" style="background:#e8f5e9;color:#2e7d32;">${d.cache?.hit_rate ?? '—'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('healthLastRefresh').textContent = 'Refreshed ' + new Date().toLocaleTimeString('en-IN', { hour12: true });
+  } catch (err) {
+    document.getElementById('healthContent').innerHTML =
+      `<div class="alert alert-danger">${esc(err.message)}</div>`;
+  }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = (d) => d ? new Date(d).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+const fmtUptime = (s) => { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60); return `${h}h ${m}m`; };
+
+function timeSince(date) {
+  const s = Math.floor((Date.now() - date) / 1000);
+  if (s < 60)   return s + 's ago';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+function strColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  const colors = ['#2e7d32','#1565c0','#6a1b9a','#e65100','#00695c','#4527a0'];
+  return colors[Math.abs(h) % colors.length];
+}
+
+function renderPagination(containerId, pages, current, loader) {
+  const el = document.getElementById(containerId);
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  let html = '';
+  if (current > 1) html += `<button class="btn btn-sm btn-outline-secondary" onclick="${loader.name}(${current-1})"><i class="bi bi-chevron-left"></i></button>`;
+  const start = Math.max(1, current - 2), end = Math.min(pages, current + 2);
+  for (let i = start; i <= end; i++) {
+    html += `<button class="btn btn-sm ${i===current?'btn-success':'btn-outline-secondary'}" onclick="${loader.name}(${i})">${i}</button>`;
+  }
+  if (current < pages) html += `<button class="btn btn-sm btn-outline-secondary" onclick="${loader.name}(${current+1})"><i class="bi bi-chevron-right"></i></button>`;
+  el.innerHTML = html;
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #1b8e31 0%, #4caf50 60%, #81c784 100%);
+        padding: 80px 40px;
+        border-radius: 24px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::before {
+        content: "";
+        position: absolute;
+        width: 350px; height: 350px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 50%;
+        top: -100px; right: -80px;
+    }
+    .hero-section::after {
+        content: "";
+        position: absolute;
+        width: 200px; height: 200px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 50%;
+        bottom: -60px; left: 60px;
+    }
+
+    .hero-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 50px;
+        padding: 6px 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 1.2rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .hero-btn {
+        background: white;
+        color: #1b8e31;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 32px;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .hero-btn:hover {
+        background: #f1fff3;
+        color: #1b5e20;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .hero-btn-outline {
+        background: transparent;
+        color: white;
+        border: 2px solid rgba(255,255,255,0.6);
+        border-radius: 12px;
+        padding: 12px 28px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .hero-btn-outline:hover {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        border-color: white;
+    }
+
+    .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 50px;
+        padding: 8px 18px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        backdrop-filter: blur(4px);
+    }
+
+    .feature-card {
+        border-radius: 20px;
+        border: none;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 32px rgba(46,125,50,0.15) !important;
+    }
+    .feature-icon {
+        width: 60px; height: 60px;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .step-item {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 20px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .step-item:last-child { border-bottom: none; }
+    .step-number {
+        width: 42px; height: 42px;
+        min-width: 42px;
+        border-radius: 12px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1rem;
+    }
+
+    .cta-section {
+        background: linear-gradient(135deg, #e8f5e9, #f1fff4);
+        border-radius: 24px;
+        padding: 60px 40px;
+        border: 1px solid #c8e6c9;
+    }
+</style>
+
+
+<!-- ========= HERO ========= -->
+<div class="hero-section animate__animated animate__fadeIn mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <div class="hero-badge">
+                <i class="bi bi-stars me-1"></i> AI-Powered Agriculture
+            </div>
+
+            <h1 class="fw-bold display-5 mb-3" style="line-height:1.2;">
+                Grow Smarter,<br>Harvest Better
+            </h1>
+
+            <p class="lead mb-4" style="opacity:0.9; font-size:1.1rem;">
+                Get real-time AI crop recommendations powered by live weather data,
+                soil analysis, and machine learning. Make confident farming decisions in seconds.
+            </p>
+
+            <div class="d-flex flex-wrap gap-3 mb-4">
+                <a href="/predict" class="hero-btn">
+                    <i class="bi bi-lightning-charge-fill"></i> Start Prediction
+                </a>
+                <a href="/dashboard" class="hero-btn-outline">
+                    <i class="bi bi-bar-chart"></i> View Dashboard
+                </a>
+                <a href="/iot-center" class="hero-btn-outline">
+                    <i class="bi bi-cpu-fill"></i> IoT Center
+                </a>
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 mt-2">
+                <span class="stat-pill"><i class="bi bi-check-circle-fill"></i> 22+ Crops</span>
+                <span class="stat-pill"><i class="bi bi-shield-check-fill"></i> Disease Detection</span>
+                <span class="stat-pill"><i class="bi bi-droplet-fill"></i> Smart Irrigation</span>
+            </div>
+        </div>
+        <div class="col-lg-5 d-none d-lg-flex justify-content-center mt-4 mt-lg-0">
+            <div style="font-size: 8rem; opacity: 0.3; text-align: center; line-height:1;">
+                🌾
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========= FEATURES ========= -->
+<div class="mb-5">
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Why Farmpilot AI?</h2>
+        <p class="text-muted">Everything you need to make smarter farming decisions</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm p-4">
+                <div class="feature-icon" style="background:#e8f5e9;">
+                    <i class="bi bi-cloud-sun-fill text-success"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Live Weather Insights</h5>
+                <p class="text-muted mb-0">Real-time temperature, humidity, and rainfall data integrated automatically from OpenWeather API.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm p-4">
+                <div class="feature-icon" style="background:#e3f2fd;">
+                    <i class="bi bi-cpu-fill" style="color:#1976d2;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">ML-Powered Predictions</h5>
+                <p class="text-muted mb-0">Smart models analyze soil NPK, pH, and climate to recommend the top 5 most suitable crops.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm p-4">
+                <div class="feature-icon" style="background:#fce4ec;">
+                    <i class="bi bi-bug-fill" style="color:#c62828;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Disease Detection</h5>
+                <p class="text-muted mb-0">Upload a leaf image and get instant AI diagnosis with treatment and prevention guidance.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm p-4">
+                <div class="feature-icon" style="background:#e1f5fe;">
+                    <i class="bi bi-droplet-fill" style="color:#0277bd;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Smart Irrigation</h5>
+                <p class="text-muted mb-0">Monitor ESP32 device status, review live telemetry, and control the irrigation motor from one dedicated module.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm p-4">
+                <div class="feature-icon" style="background:#fff8e1;">
+                    <i class="bi bi-bar-chart-fill" style="color:#f57f17;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Analytics Dashboard</h5>
+                <p class="text-muted mb-0">Visual weather trends, 7-day forecasts, and crop suitability charts for your location.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card feature-card shadow-sm p-4">
+                <div class="feature-icon" style="background:#f3e5f5;">
+                    <i class="bi bi-book-fill" style="color:#7b1fa2;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Crop Knowledge Base</h5>
+                <p class="text-muted mb-0">Detailed growing guides with NPK requirements, ideal conditions, and expert farming tips.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========= HOW IT WORKS ========= -->
+<div class="card shadow-sm p-4 mb-5">
+    <div class="text-center mb-3">
+        <h2 class="fw-bold">How It Works</h2>
+        <p class="text-muted">Get your crop recommendation in 3 simple steps</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div>
+                    <h6 class="fw-bold mb-1">Enter Soil Data</h6>
+                    <p class="text-muted mb-0 small">Input your soil's Nitrogen, Phosphorus, Potassium, pH level, and expected rainfall using the sliders.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div>
+                    <h6 class="fw-bold mb-1">Auto-Fetch Weather</h6>
+                    <p class="text-muted mb-0 small">Enter your city name or use GPS detection — real-time temperature and humidity are fetched automatically.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div>
+                    <h6 class="fw-bold mb-1">AI Analyses Your Data</h6>
+                    <p class="text-muted mb-0 small">The machine learning model processes all parameters and computes crop suitability scores.</p>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div>
+                    <h6 class="fw-bold mb-1">Get Ranked Recommendations</h6>
+                    <p class="text-muted mb-0 small">View your top 5 crops ranked by match probability with images and confidence percentages.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========= CTA ========= -->
+<div class="cta-section text-center">
+    <h2 class="fw-bold text-success mb-3">Ready to Find the Best Crop for Your Field?</h2>
+    <p class="lead text-muted mb-4">
+        Let AI help you make smarter agricultural decisions in seconds!
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="/predict" class="btn btn-success btn-lg px-5 fw-bold" style="border-radius:12px;">
+            <i class="bi bi-lightning-charge-fill me-2"></i>Start Prediction
+        </a>
+        <a href="/crop-info" class="btn btn-outline-success btn-lg px-5 fw-bold" style="border-radius:12px;">
+            <i class="bi bi-book me-2"></i>Explore Crop Info
+        </a>
+    </div>
+</div>
+
+{% endblock %}

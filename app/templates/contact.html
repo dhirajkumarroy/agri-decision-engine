@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .contact-card {
+        border-radius: 20px;
+        border: none;
+        transition: 0.3s;
+    }
+    .contact-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.12) !important;
+    }
+    .icon-box {
+        width: 56px; height: 56px;
+        border-radius: 14px;
+        background: #e8f7ec;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        color: #2e7d32;
+        margin: 0 auto 12px;
+        flex-shrink: 0;
+    }
+    .contact-form .form-control,
+    .contact-form .form-select {
+        border-radius: 10px;
+        border: 2px solid #e0e0e0;
+        padding: 10px 14px;
+        transition: border-color 0.2s;
+    }
+    .contact-form .form-control:focus,
+    .contact-form .form-select:focus {
+        border-color: #2e7d32;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.12);
+    }
+
+    /* Toast */
+    #toastContainer {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+    }
+    .toast-msg {
+        background: white;
+        border-radius: 14px;
+        padding: 14px 20px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 280px;
+        animation: slideToast 0.3s ease;
+    }
+    @keyframes slideToast {
+        from { opacity: 0; transform: translateX(50px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    .toast-icon { font-size: 1.5rem; }
+
+    .help-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.9rem;
+    }
+    .help-item:last-child { border-bottom: none; }
+</style>
+
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
+
+<!-- PAGE HEADER -->
+<div class="text-center mb-5 animate__animated animate__fadeInDown">
+    <h2 class="fw-bold text-success">Get in Touch</h2>
+    <p class="text-muted lead">Have feedback, questions, or ideas? We'd love to hear from you.</p>
+</div>
+
+
+<!-- CONTACT CARDS -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm contact-card text-center animate__animated animate__zoomIn">
+            <div class="icon-box">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
+            <h5 class="fw-bold">Email Support</h5>
+            <p class="text-muted small">Reach us anytime for help or suggestions.</p>
+            <a href="mailto:support@farmpilot.ai" class="fw-bold text-success text-decoration-none">
+                support@farmpilot.ai
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm contact-card text-center animate__animated animate__zoomIn" style="animation-delay:0.1s;">
+            <div class="icon-box">
+                <i class="bi bi-github"></i>
+            </div>
+            <h5 class="fw-bold">GitHub Repository</h5>
+            <p class="text-muted small">Report issues or contribute to the project.</p>
+            <a href="#" class="fw-bold text-success text-decoration-none">
+                github.com/farmpilot-ai
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm contact-card text-center animate__animated animate__zoomIn" style="animation-delay:0.2s;">
+            <div class="icon-box">
+                <i class="bi bi-telephone-fill"></i>
+            </div>
+            <h5 class="fw-bold">Phone Support</h5>
+            <p class="text-muted small">Available Mon–Sat, 9 AM – 6 PM IST</p>
+            <span class="fw-bold text-success">+91 98765 43210</span>
+        </div>
+    </div>
+</div>
+
+
+<!-- CONTENT ROW -->
+<div class="row g-4">
+
+    <!-- WHAT WE HELP WITH -->
+    <div class="col-md-4">
+        <div class="card shadow-sm p-4 h-100" style="border-radius:20px; border:none;">
+            <h5 class="fw-bold mb-3"><i class="bi bi-question-circle-fill text-success me-2"></i>How Can We Help?</h5>
+            <div>
+                {% for item in [
+                    ('seedling', 'Crop Prediction Issues'),
+                    ('cloud-sun', 'Weather Data Errors'),
+                    ('cpu', 'API & Integration Help'),
+                    ('lightbulb', 'Feature Requests'),
+                    ('bug', 'Technical Bug Reports'),
+                    ('palette', 'UI/UX Suggestions'),
+                    ('graph-up', 'Data & Model Questions'),
+                    ('people', 'Research Collaborations')
+                ] %}
+                <div class="help-item">
+                    <i class="bi bi-{{ item[0] }} text-success"></i>
+                    <span>{{ item[1] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTACT FORM -->
+    <div class="col-md-8">
+        <div class="card shadow-sm p-4 contact-form animate__animated animate__fadeInUp" style="border-radius:20px; border:none;">
+            <h5 class="fw-bold mb-1"><i class="bi bi-chat-left-dots-fill text-success me-2"></i>Send Us a Message</h5>
+            <p class="text-muted small mb-4">We typically respond within 24 hours.</p>
+
+            <form id="contactForm" onsubmit="submitForm(event)" novalidate>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="fw-bold small mb-1">Your Name *</label>
+                        <input type="text" id="fname" class="form-control" placeholder="John Doe" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fw-bold small mb-1">Your Email *</label>
+                        <input type="email" id="femail" class="form-control" placeholder="you@example.com" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold small mb-1">Subject *</label>
+                    <select id="fsubject" class="form-select" required>
+                        <option value="" disabled selected>Select a topic...</option>
+                        <option>Crop Prediction Issue</option>
+                        <option>Weather Data Error</option>
+                        <option>Disease Detection Help</option>
+                        <option>Feature Request</option>
+                        <option>Technical Bug</option>
+                        <option>Research Collaboration</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="fw-bold small mb-1">Message *</label>
+                    <textarea id="fmessage" rows="5" class="form-control"
+                        placeholder="Describe your issue or idea in detail..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold" id="submitBtn"
+                        style="border-radius:12px;">
+                    <i class="bi bi-send-fill me-2"></i>Send Message
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- MAP -->
+<div class="card shadow-sm mt-4 animate__animated animate__fadeInUp" style="border-radius:20px; border:none; overflow:hidden;">
+    <iframe
+        src="https://maps.google.com/maps?q=india&t=&z=5&ie=UTF8&iwloc=&output=embed"
+        width="100%" height="320" style="border:0;" loading="lazy"
+        allowfullscreen title="Location Map">
+    </iframe>
+</div>
+
+
+<script>
+function localToast(type, title, msg) {
+    // Use base.html showToast if available, else fall back to toastContainer
+    if (typeof showToast === 'function') { showToast(type, title, msg); return; }
+    const container = document.getElementById('toastContainer');
+    const icons  = { success:'✅', error:'❌', warning:'⚠️' };
+    const colors = { success:'#2e7d32', error:'#c62828', warning:'#e65100' };
+    const el = document.createElement('div');
+    el.className = 'toast-msg';
+    el.innerHTML = `<span class="toast-icon">${icons[type]}</span><div><div style="font-weight:700;color:${colors[type]};font-size:.9rem;">${title}</div><div style="font-size:.82rem;color:#555;">${msg}</div></div>`;
+    container.appendChild(el);
+    setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 4000);
+}
+
+async function submitForm(event) {
+    event.preventDefault();
+    const name    = document.getElementById('fname').value.trim();
+    const email   = document.getElementById('femail').value.trim();
+    const subject = document.getElementById('fsubject').value;
+    const message = document.getElementById('fmessage').value.trim();
+
+    if (!name || !email || !subject || !message) {
+        localToast('warning', 'Incomplete Form', 'Please fill in all required fields.');
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        localToast('error', 'Invalid Email', 'Please enter a valid email address.');
+        return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+    btn.disabled = true;
+
+    try {
+        // Call real Node.js backend — saves to MongoDB + sends email
+        const res  = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(typeof Auth !== 'undefined' && Auth.token ? { 'Authorization': 'Bearer ' + Auth.token } : {}) },
+            body: JSON.stringify({ name, email, subject, message }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error?.message || 'Failed to send message.');
+
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Message Sent!';
+        btn.classList.replace('btn-success', 'btn-outline-success');
+        localToast('success', 'Message Sent!', json.data?.message || `Thanks ${name}! We'll reply to ${email} soon.`);
+        document.getElementById('contactForm').reset();
+        setTimeout(() => {
+            btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Message';
+            btn.classList.replace('btn-outline-success', 'btn-success');
+            btn.disabled = false;
+        }, 3000);
+    } catch (err) {
+        localToast('error', 'Send Failed', err.message);
+        btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Message';
+        btn.disabled = false;
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/ai_crop_advisor
+      ML_BACKEND_URL: http://ml-service:8000
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+    depends_on:
+      - mongo
+      - ml-service
+      - mqtt
+    ports:
+      - "3000:3000"
+
+  ml-service:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+    ports:
+      - "8000:8000"
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+volumes:
+  mongo-data:

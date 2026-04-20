@@ -1,0 +1,1117 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .iot-page { max-width: 980px; margin: 0 auto; }
+  .iot-stack { display: grid; gap: 20px; }
+
+  .iot-hero {
+    border-radius: 26px;
+    padding: 32px 36px;
+    background:
+      radial-gradient(circle at top right, rgba(255,255,255,0.12), transparent 28%),
+      linear-gradient(140deg, #173d22 0%, #256e35 55%, #3e9a4e 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 28px;
+    box-shadow: 0 16px 32px rgba(26, 62, 36, 0.18);
+  }
+  .iot-hero::before {
+    content: '';
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .iot-hero::after {
+    content: '';
+    position: absolute;
+    left: -60px;
+    bottom: -80px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.7fr .95fr;
+    gap: 18px;
+    align-items: start;
+  }
+  .hero-device-id {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 6px;
+  }
+  .hero-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin-bottom: 0;
+  }
+  .hero-subtitle {
+    opacity: .85;
+    font-size: .96rem;
+    line-height: 1.6;
+    max-width: 590px;
+    margin: 12px 0 0;
+  }
+  .conn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition: all 0.3s;
+  }
+  .conn-pill.online { background: rgba(255,255,255,0.16); color: #d7ffd8; }
+  .conn-pill.offline { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.55); }
+  .conn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .conn-pill.online .conn-dot { background: #69f0ae; box-shadow: 0 0 0 3px rgba(105,240,174,0.28); }
+  .conn-pill.offline .conn-dot { background: rgba(255,255,255,0.34); }
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .hero-stat {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 15px 16px;
+    backdrop-filter: blur(6px);
+  }
+  .hero-stat-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    opacity: .76;
+    font-weight: 700;
+  }
+  .hero-stat-value {
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin-top: 10px;
+  }
+  .hero-side {
+    background: rgba(8, 28, 13, 0.18);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 18px;
+  }
+  .hero-side-title {
+    font-size: .78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    opacity: .75;
+    margin-bottom: 8px;
+  }
+  .hero-side-copy {
+    font-size: .91rem;
+    line-height: 1.55;
+    opacity: .92;
+  }
+  .hero-side-list {
+    list-style: none;
+    padding: 0;
+    margin: 14px 0 0;
+    display: grid;
+    gap: 9px;
+  }
+  .hero-side-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .85rem;
+  }
+  .hero-side-list i { color: #d5ffd9; }
+
+  .device-bar {
+    background: white;
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 3px 16px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .device-bar label {
+    font-weight: 700;
+    font-size: 0.84rem;
+    color: #516051;
+    white-space: nowrap;
+    margin: 0;
+  }
+  .device-bar input {
+    flex: 1;
+    min-width: 150px;
+    max-width: 260px;
+    border-radius: 12px;
+    border: 2px solid #e8f5e9;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .device-bar input:focus {
+    border-color: #2e7d32;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(46,125,50,0.12);
+  }
+  .btn-load,
+  .btn-ghost {
+    border-radius: 11px;
+    font-weight: 700;
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-load {
+    padding: 10px 20px;
+    background: #2e7d32;
+    color: white;
+    border: none;
+  }
+  .btn-load:hover { background: #1b5e20; }
+  .btn-load:active { transform: scale(0.98); }
+  .btn-ghost {
+    padding: 10px 16px;
+    background: #f6fbf6;
+    color: #275e2b;
+    border: 1.5px solid #d8ebd8;
+  }
+  .btn-ghost:hover { background: #edf7ee; border-color: #bfdcc1; }
+  .refresh-info {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: #8ca08d;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .refresh-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .status-banner {
+    background: linear-gradient(135deg, #fffdf5, #f8fff5);
+    border: 1.5px solid #e5eed8;
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .status-banner-label {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #91a078;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .status-banner-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #23351f;
+    margin-bottom: 4px;
+  }
+  .status-banner-copy {
+    color: #60705c;
+    font-size: .9rem;
+    max-width: 620px;
+    line-height: 1.5;
+  }
+  .status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-radius: 999px;
+    background: #eef7e8;
+    color: #315f33;
+    font-size: .82rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .status-tag.alert {
+    background: #fff1f1;
+    color: #b04343;
+  }
+
+  .motor-section,
+  .telemetry-section {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  .panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .motor-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9eaa9e;
+    margin-bottom: 0;
+  }
+  .section-intro {
+    color: #738173;
+    font-size: .9rem;
+    margin: 7px 0 0;
+  }
+  .motor-state-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .motor-state-ring {
+    width: 102px;
+    height: 102px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.35s ease;
+    flex-shrink: 0;
+  }
+  .motor-state-ring.on {
+    background: radial-gradient(circle, #e8f5e9, #c8e6c9);
+    box-shadow: 0 0 0 8px rgba(76,175,80,0.12), 0 0 0 16px rgba(76,175,80,0.05);
+  }
+  .motor-state-ring.off {
+    background: #f5f5f5;
+  }
+  .motor-state-ring.unknown {
+    background: #fafafa;
+  }
+  .motor-state-icon { font-size: 2rem; line-height: 1; }
+  .motor-state-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .motor-state-ring.on .motor-state-label { color: #2e7d32; }
+  .motor-state-ring.off .motor-state-label { color: #999; }
+  .motor-buttons {
+    display: flex;
+    gap: 12px;
+  }
+  .btn-motor {
+    flex: 1;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-motor:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+  .btn-motor-on {
+    background: #2e7d32;
+    color: white;
+    border-color: #2e7d32;
+  }
+  .btn-motor-on:not(:disabled):hover {
+    background: #1b5e20;
+    border-color: #1b5e20;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(46,125,50,0.35);
+  }
+  .btn-motor-on.active-state {
+    background: white;
+    color: #2e7d32;
+    border-color: #2e7d32;
+  }
+  .btn-motor-off {
+    background: white;
+    color: #c62828;
+    border-color: #ef9a9a;
+  }
+  .btn-motor-off:not(:disabled):hover {
+    background: #ffebee;
+    border-color: #c62828;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(198,40,40,0.15);
+  }
+  .btn-motor-off.active-state {
+    background: #ffebee;
+    color: #c62828;
+    border-color: #c62828;
+  }
+  .motor-hints {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .hint-card {
+    border-radius: 16px;
+    padding: 14px 15px;
+    background: #fafcf9;
+    border: 1px solid #ebf3e8;
+  }
+  .hint-card strong {
+    display: block;
+    font-size: .82rem;
+    color: #29482d;
+    margin-bottom: 4px;
+  }
+  .hint-card span {
+    display: block;
+    font-size: .82rem;
+    color: #6f7d70;
+    line-height: 1.45;
+  }
+
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    gap: 12px;
+  }
+  .t-card {
+    border-radius: 14px;
+    padding: 16px;
+    background: #fafafa;
+    border: 1.5px solid #f0f0f0;
+    transition: border-color 0.3s;
+  }
+  .t-card.alert-card { border-color: #ffcdd2; background: #fff8f8; }
+  .t-card.good-card { border-color: #c8e6c9; background: #f6fff6; }
+  .t-card.focus-card { border-color: #ffe0b2; background: #fffaf1; }
+  .t-icon { font-size: 1.4rem; margin-bottom: 10px; }
+  .t-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #aaa;
+    margin-bottom: 4px;
+  }
+  .t-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+  .t-unit {
+    font-size: 0.72rem;
+    color: #999;
+    font-weight: 500;
+    margin-top: 3px;
+  }
+  .t-meta {
+    margin-top: 12px;
+    font-size: .76rem;
+    color: #728072;
+    line-height: 1.42;
+  }
+
+  .status-bar {
+    background: white;
+    border-radius: 14px;
+    padding: 14px 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: #888;
+  }
+  .status-bar .sep {
+    width: 1px;
+    height: 16px;
+    background: #eee;
+  }
+
+  .login-hint {
+    border-radius: 14px;
+    padding: 20px 22px;
+    background: linear-gradient(135deg, #f0fdf4, #e8f5e9);
+    border: 1.5px solid #c8e6c9;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .login-hint i {
+    font-size: 1.6rem;
+    color: #2e7d32;
+    flex-shrink: 0;
+  }
+  .login-hint .hint-text {
+    font-size: 0.9rem;
+    color: #2e7d32;
+  }
+  .login-hint .hint-text strong {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @media (max-width: 768px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-stats { grid-template-columns: 1fr; }
+    .motor-hints { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 576px) {
+    .iot-hero { padding: 24px 20px; }
+    .motor-buttons { flex-direction: column; }
+    .device-bar { gap: 8px; }
+    .status-banner { padding: 16px; }
+  }
+</style>
+
+<div class="iot-page page-wrapper">
+  <div class="iot-hero shadow-sm">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-device-id" id="heroDeviceLabel">No device loaded</div>
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="hero-title">Irrigation Control Center</h1>
+            <p class="hero-subtitle">Track your field hardware, understand sensor signals faster, and operate the irrigation motor with clearer feedback.</p>
+          </div>
+          <div>
+            <div class="conn-pill offline" id="connPill">
+              <span class="conn-dot"></span>
+              <span id="connPillText">Offline</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-label"><i class="bi bi-power"></i>Motor</div>
+            <div class="hero-stat-value" id="heroMotorStat">Waiting</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-label"><i class="bi bi-clock-history"></i>Last update</div>
+            <div class="hero-stat-value" id="heroLastSeenStat">No data</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-label"><i class="bi bi-droplet-half"></i>Field signal</div>
+            <div class="hero-stat-value" id="heroSignalStat">Load device</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="hero-side-title">Quick Guide</div>
+        <div class="hero-side-copy" id="heroGuideText">Load your device to review live readings, check whether the motor is safe to run, and get a simple irrigation summary from the latest field telemetry.</div>
+        <ul class="hero-side-list">
+          <li><i class="bi bi-check-circle-fill"></i><span>Use your saved device ID to reconnect quickly.</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span>Watch for rain or zero-flow warnings before long watering cycles.</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span>Auto-refresh keeps the dashboard updated every 15 seconds.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-hint" id="loginHint" style="display:none;">
+    <i class="bi bi-shield-lock-fill"></i>
+    <div class="hint-text">
+      <strong>Sign in required</strong>
+      Please log in to load your device and control the irrigation motor.
+    </div>
+    <button class="btn btn-success btn-sm ms-auto fw-bold" onclick="openAuth()">Sign In</button>
+  </div>
+
+  <div class="device-bar">
+    <label for="deviceIdInput"><i class="bi bi-cpu me-1"></i>Device ID</label>
+    <input type="text" id="deviceIdInput" placeholder="e.g. farm_1" autocomplete="off" spellcheck="false"/>
+    <button class="btn-load" id="loadDeviceBtn" onclick="loadDevice()">
+      <i class="bi bi-arrow-repeat me-1"></i>Load Device
+    </button>
+    <button class="btn-ghost" id="refreshNowBtn" onclick="loadDevice()" disabled>
+      <i class="bi bi-arrow-clockwise me-1"></i>Refresh Now
+    </button>
+    <div class="refresh-info" id="refreshInfo" style="display:none;">
+      <div class="refresh-pulse"></div>
+      <span id="refreshLabel">Auto-refresh every 15s</span>
+    </div>
+  </div>
+
+  <div class="iot-stack">
+    <div class="status-banner" id="statusBanner">
+      <div>
+        <div class="status-banner-label">System Insight</div>
+        <div class="status-banner-title" id="statusBannerTitle">Waiting for device data</div>
+        <div class="status-banner-copy" id="statusBannerCopy">Once a device is loaded, this panel will summarize whether irrigation looks safe, what needs attention, and what changed recently.</div>
+      </div>
+      <div class="status-tag" id="statusTag"><i class="bi bi-info-circle-fill"></i>Needs device</div>
+    </div>
+
+    <div class="motor-section">
+      <div class="panel-head">
+        <div>
+          <div class="motor-section-title"><i class="bi bi-toggle-on me-1"></i>Motor Control</div>
+          <p class="section-intro">Check the latest status here before starting or stopping irrigation.</p>
+        </div>
+      </div>
+      <div class="motor-state-display">
+        <div class="motor-state-ring unknown" id="motorRing">
+          <span class="motor-state-icon" id="motorIcon">💧</span>
+          <span class="motor-state-label" id="motorLabel">—</span>
+        </div>
+        <div class="flex-grow-1">
+          <div class="text-muted small mb-3" id="motorSubtext">Load a device to enable motor control.</div>
+          <div class="motor-buttons">
+            <button type="button" class="btn-motor btn-motor-on" id="btnMotorOn" onclick="setMotor('ON')" disabled>
+              <i class="bi bi-play-fill"></i> Turn ON
+            </button>
+            <button type="button" class="btn-motor btn-motor-off" id="btnMotorOff" onclick="setMotor('OFF')" disabled>
+              <i class="bi bi-stop-fill"></i> Turn OFF
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="motor-hints">
+        <div class="hint-card">
+          <strong>Best time to act</strong>
+          <span id="hintBestTime">Load a device to get guidance from the latest telemetry.</span>
+        </div>
+        <div class="hint-card">
+          <strong>Safety check</strong>
+          <span id="hintSafety">We will flag rain or unusual flow conditions here.</span>
+        </div>
+        <div class="hint-card">
+          <strong>Next refresh</strong>
+          <span id="hintRefresh">Auto-refresh starts after your device is loaded.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="telemetry-section">
+      <div class="panel-head">
+        <div>
+          <div class="motor-section-title"><i class="bi bi-activity me-1"></i>Live Sensor Data</div>
+          <p class="section-intro">Each card includes a small interpretation so the readings are easier to understand.</p>
+        </div>
+      </div>
+      <div class="telemetry-grid" id="telemetryGrid">
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+        <div class="t-card"><div class="skeleton" style="height:20px;width:40px;margin-bottom:8px;"></div><div class="skeleton" style="height:28px;width:70%;"></div></div>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <i class="bi bi-clock text-muted"></i>
+      <span id="lastSeenText">No data yet</span>
+      <div class="sep"></div>
+      <span id="powerStateText"><i class="bi bi-power me-1"></i>Power: —</span>
+      <div class="sep"></div>
+      <span id="refreshModeText" class="text-muted"><i class="bi bi-arrow-repeat me-1"></i>Refreshes every 15s when device is loaded</span>
+    </div>
+  </div>
+</div>
+
+<script>
+let iotData = null;
+let pollTimer = null;
+let currentDevice = '';
+let refreshTimers = [];
+let motorCommandInFlight = false;
+let lastMotorCommand = { action: null, at: 0 };
+const DEVICE_ONLINE_WINDOW_MS = 30 * 1000;
+const AUTO_REFRESH_MS = 15000;
+const MOTOR_COMMAND_DEBOUNCE_MS = 4000;
+
+function timeSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 5) return 'just now';
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function isOnline(lastSeenStr) {
+  if (!lastSeenStr) return false;
+  return Date.now() - new Date(lastSeenStr) < DEVICE_ONLINE_WINDOW_MS;
+}
+
+function resetMotorButtons() {
+  document.getElementById('btnMotorOn').innerHTML = '<i class="bi bi-play-fill"></i> Turn ON';
+  document.getElementById('btnMotorOff').innerHTML = '<i class="bi bi-stop-fill"></i> Turn OFF';
+}
+
+function setMotorButtonsDisabled(disabled) {
+  document.getElementById('btnMotorOn').disabled = disabled;
+  document.getElementById('btnMotorOff').disabled = disabled;
+}
+
+function scheduleRefreshSequence() {
+  refreshTimers.forEach((timerId) => clearTimeout(timerId));
+  refreshTimers = [
+    setTimeout(() => {
+      if (Auth.isLoggedIn() && currentDevice) loadDevice(true);
+    }, 2000),
+    setTimeout(() => {
+      if (Auth.isLoggedIn() && currentDevice) loadDevice(true);
+    }, 6000),
+  ];
+}
+
+function getFieldSignal(data) {
+  const soil = data.soil != null ? Number(data.soil) : null;
+  const flow = data.flow != null ? Number(data.flow) : null;
+  if (data.rain === true) return 'Rain alert';
+  if (data.motor && flow === 0) return 'Check flow';
+  if (soil != null && soil > 700) return 'Soil looks dry';
+  if (soil != null && soil < 300) return 'Soil looks wet';
+  return 'Stable';
+}
+
+function getBannerState(data) {
+  const flow = data.flow != null ? Number(data.flow) : null;
+  const soil = data.soil != null ? Number(data.soil) : null;
+
+  if (!isOnline(data.lastSeen)) {
+    return {
+      title: 'Device is offline right now',
+      copy: 'The dashboard is showing the latest saved reading, but the device has not checked in recently. Confirm power and connectivity before relying on these controls.',
+      tag: 'Offline',
+      alert: true,
+    };
+  }
+
+  if (data.rain === true) {
+    return {
+      title: 'Rain detected in the field',
+      copy: 'Pause irrigation unless you have a specific need. Extra watering during rain can waste water and may stress the soil.',
+      tag: 'Rain warning',
+      alert: true,
+    };
+  }
+
+  if (data.motor === true && flow === 0) {
+    return {
+      title: 'Motor is on but no water flow is detected',
+      copy: 'This may point to a dry line, blockage, or sensor mismatch. Inspect the pipeline before continuing a long run.',
+      tag: 'Flow check',
+      alert: true,
+    };
+  }
+
+  if (soil != null && soil > 700) {
+    return {
+      title: 'Soil appears dry',
+      copy: 'Conditions look suitable for irrigation if the motor and pump line are healthy. A short watering cycle may help restore moisture.',
+      tag: 'Water likely needed',
+      alert: false,
+    };
+  }
+
+  if (soil != null && soil < 300) {
+    return {
+      title: 'Soil already looks moist',
+      copy: 'The soil sensor is reading on the wetter side. You may want to wait and avoid unnecessary irrigation for now.',
+      tag: 'Hold irrigation',
+      alert: false,
+    };
+  }
+
+  return {
+    title: 'System looks stable',
+    copy: 'The device is online and no immediate warning signals stand out. You can continue monitoring or operate the motor as needed.',
+    tag: 'Normal',
+    alert: false,
+  };
+}
+
+function updateGuidance(data) {
+  const banner = getBannerState(data);
+  const soil = data.soil != null ? Number(data.soil) : null;
+  const flow = data.flow != null ? Number(data.flow) : null;
+
+  document.getElementById('statusBannerTitle').textContent = banner.title;
+  document.getElementById('statusBannerCopy').textContent = banner.copy;
+
+  const statusTag = document.getElementById('statusTag');
+  statusTag.className = `status-tag${banner.alert ? ' alert' : ''}`;
+  statusTag.innerHTML = `<i class="bi ${banner.alert ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'}"></i>${banner.tag}`;
+
+  document.getElementById('heroGuideText').textContent = banner.copy;
+  document.getElementById('heroMotorStat').textContent = data.motor ? 'Running' : 'Stopped';
+  document.getElementById('heroLastSeenStat').textContent = timeSince(data.lastSeen) || 'Unknown';
+  document.getElementById('heroSignalStat').textContent = getFieldSignal(data);
+
+  document.getElementById('hintBestTime').textContent =
+    soil == null ? 'Waiting for soil telemetry.' :
+    soil > 700 ? 'Soil looks dry, so irrigation may help now.' :
+    soil < 300 ? 'Soil already looks moist, so waiting may be better.' :
+    'Soil is in a middle range, so use local field judgment.';
+
+  document.getElementById('hintSafety').textContent =
+    data.rain === true ? 'Rain detected. Avoid watering unless absolutely necessary.' :
+    data.motor && flow === 0 ? 'Motor is on but flow is zero. Check the line or blockage.' :
+    'No immediate safety warning from rain or flow telemetry.';
+
+  document.getElementById('hintRefresh').textContent = `Auto-refresh is active every ${Math.round(AUTO_REFRESH_MS / 1000)} seconds for ${currentDevice}.`;
+}
+
+function syncAuthUI() {
+  const loggedIn = Auth.isLoggedIn();
+  document.getElementById('loginHint').style.display = loggedIn ? 'none' : 'flex';
+  document.getElementById('loadDeviceBtn').disabled = !loggedIn;
+  document.getElementById('refreshNowBtn').disabled = !loggedIn || !currentDevice;
+  if (!loggedIn) resetPanel();
+}
+
+function updatePanel(data) {
+  iotData = data;
+  const online = isOnline(data.lastSeen);
+  const motorOn = online && data.motor === true;
+  const desiredMotorOn = data.desiredMotor === true;
+  const flow = data.flow != null ? Number(data.flow).toFixed(1) : null;
+  const soil = data.soil != null ? Number(data.soil).toFixed(0) : null;
+  const temp = data.temperature != null ? Number(data.temperature).toFixed(1) : null;
+  const humidity = data.humidity != null ? Number(data.humidity).toFixed(1) : null;
+  const current = data.current != null ? Number(data.current).toFixed(1) : null;
+  const rain = data.rain != null ? data.rain : null;
+
+  const rainAlert = rain === true;
+  const flowAlert = motorOn && flow !== null && parseFloat(flow) === 0;
+  const soilFocus = soil !== null && parseFloat(soil) > 700;
+
+  const pill = document.getElementById('connPill');
+  pill.className = `conn-pill ${online ? 'online' : 'offline'}`;
+  document.getElementById('connPillText').textContent = online ? 'Online' : 'Offline';
+  document.getElementById('heroDeviceLabel').textContent = currentDevice ? `Device: ${currentDevice}` : 'No device loaded';
+
+  const ring = document.getElementById('motorRing');
+  ring.className = `motor-state-ring ${motorOn ? 'on' : 'off'}`;
+  document.getElementById('motorIcon').textContent = motorOn ? '💧' : '⛔';
+  document.getElementById('motorLabel').textContent = motorOn ? 'RUNNING' : 'STOPPED';
+  document.getElementById('motorSubtext').textContent = !online
+    ? `Device is offline. Last known command was ${desiredMotorOn ? 'ON' : 'OFF'}, but live relay state is not confirmed.`
+    : motorOn
+      ? 'Motor is currently running. Use Turn OFF if irrigation should stop.'
+      : 'Motor is off. Use Turn ON when field conditions look ready.';
+
+  const btnOn = document.getElementById('btnMotorOn');
+  const btnOff = document.getElementById('btnMotorOff');
+  resetMotorButtons();
+  btnOn.disabled = !online;
+  btnOff.disabled = !online;
+  btnOn.classList.toggle('active-state', motorOn);
+  btnOff.classList.toggle('active-state', !motorOn);
+
+  document.getElementById('telemetryGrid').innerHTML = `
+    <div class="t-card ${flowAlert ? 'alert-card' : (flow && parseFloat(flow) > 0 ? 'good-card' : '')}">
+      <div class="t-icon">🌊</div>
+      <div class="t-label">Water Flow</div>
+      <div class="t-value">${flow ?? '—'}</div>
+      <div class="t-unit">${flow ? 'L / min' : 'No data'}</div>
+      <div class="t-meta">${flowAlert ? 'Motor is active but flow is missing, so inspect the line.' : flow && parseFloat(flow) > 0 ? 'Water movement is being detected normally.' : 'Flow will appear here when sensor data arrives.'}</div>
+    </div>
+    <div class="t-card ${soilFocus ? 'focus-card' : (soil !== null ? 'good-card' : '')}">
+      <div class="t-icon">🌱</div>
+      <div class="t-label">Soil Sensor</div>
+      <div class="t-value">${soil ?? '—'}</div>
+      <div class="t-unit">${soil !== null ? 'ADC reading' : 'No data'}</div>
+      <div class="t-meta">${soil == null ? 'No soil reading yet.' : parseFloat(soil) > 700 ? 'Higher value suggests drier soil in this setup.' : parseFloat(soil) < 300 ? 'Lower value suggests wetter soil.' : 'Soil is reading in a middle range.'}</div>
+    </div>
+    <div class="t-card ${temp !== null ? 'good-card' : ''}">
+      <div class="t-icon">🌡️</div>
+      <div class="t-label">Temperature</div>
+      <div class="t-value">${temp ?? '—'}</div>
+      <div class="t-unit">${temp !== null ? '°C (DHT11)' : 'No data'}</div>
+      <div class="t-meta">${temp == null ? 'Temperature will update when data arrives.' : 'Use this with humidity to judge field stress conditions.'}</div>
+    </div>
+    <div class="t-card ${humidity !== null ? 'good-card' : ''}">
+      <div class="t-icon">💧</div>
+      <div class="t-label">Humidity</div>
+      <div class="t-value">${humidity ?? '—'}</div>
+      <div class="t-unit">${humidity !== null ? '% RH' : 'No data'}</div>
+      <div class="t-meta">${humidity == null ? 'No humidity reading yet.' : 'Helpful for spotting hot and drying conditions before irrigation.'}</div>
+    </div>
+    <div class="t-card ${rainAlert ? 'alert-card' : (rain === false ? 'good-card' : '')}">
+      <div class="t-icon">${rain === true ? '🌧️' : rain === false ? '☀️' : '🌤️'}</div>
+      <div class="t-label">Rain Sensor</div>
+      <div class="t-value">${rain === true ? 'Rain' : rain === false ? 'Clear' : '—'}</div>
+      <div class="t-unit">${rainAlert ? 'Consider turning off' : 'No rainfall'}</div>
+      <div class="t-meta">${rain === true ? 'Rain is being detected, so irrigation may not be necessary.' : rain === false ? 'No rainfall signal is active right now.' : 'Waiting for the latest rain status.'}</div>
+    </div>
+    <div class="t-card ${current !== null && parseFloat(current) > 0 ? 'good-card' : ''}">
+      <div class="t-icon">⚡</div>
+      <div class="t-label">Current Draw</div>
+      <div class="t-value">${current ?? '—'}</div>
+      <div class="t-unit">${current ? 'Amperes' : 'No data'}</div>
+      <div class="t-meta">${current == null ? 'Current will show when the motor circuit reports load.' : parseFloat(current) > 0 ? 'Electrical load is being detected.' : 'No significant motor load is showing.'}</div>
+    </div>
+    <div class="t-card">
+      <div class="t-icon">🔌</div>
+      <div class="t-label">Motor State</div>
+      <div class="t-value" style="color:${motorOn ? '#2e7d32' : '#999'};">${motorOn ? 'ON' : 'OFF'}</div>
+      <div class="t-unit">${!online ? 'Offline device' : motorOn ? 'Actively irrigating' : 'Idle'}</div>
+      <div class="t-meta">${!online ? `Live relay state is unknown while offline. Last command was ${desiredMotorOn ? 'ON' : 'OFF'}.` : motorOn ? 'Watering is currently active for this device.' : 'The motor is currently stopped.'}</div>
+    </div>
+  `;
+
+  const since = timeSince(data.lastSeen);
+  document.getElementById('lastSeenText').textContent = since ? `Last update: ${since}` : 'Last update: unknown';
+  document.getElementById('powerStateText').innerHTML = `<i class="bi bi-power me-1"></i>Power: ${data.power ? 'ON' : 'OFF'}`;
+  document.getElementById('refreshModeText').innerHTML = `<i class="bi bi-arrow-repeat me-1"></i>Auto-refresh every ${Math.round(AUTO_REFRESH_MS / 1000)}s`;
+  document.getElementById('refreshInfo').style.display = 'flex';
+  document.getElementById('refreshNowBtn').disabled = false;
+
+  updateGuidance(data);
+}
+
+function resetPanel() {
+  iotData = null;
+  clearInterval(pollTimer);
+  document.getElementById('connPill').className = 'conn-pill offline';
+  document.getElementById('connPillText').textContent = 'Offline';
+  document.getElementById('heroDeviceLabel').textContent = 'No device loaded';
+  document.getElementById('motorRing').className = 'motor-state-ring unknown';
+  document.getElementById('motorIcon').textContent = '💧';
+  document.getElementById('motorLabel').textContent = '—';
+  document.getElementById('motorSubtext').textContent = 'Load a device to enable motor control.';
+  document.getElementById('btnMotorOn').disabled = true;
+  document.getElementById('btnMotorOff').disabled = true;
+  document.getElementById('btnMotorOn').classList.remove('active-state');
+  document.getElementById('btnMotorOff').classList.remove('active-state');
+  document.getElementById('refreshNowBtn').disabled = true;
+  resetMotorButtons();
+
+  document.getElementById('telemetryGrid').innerHTML = `
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">🌊</div><div class="t-label">Water Flow</div><div class="t-value" style="color:#ccc;">—</div></div>
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">🌱</div><div class="t-label">Soil Sensor</div><div class="t-value" style="color:#ccc;">—</div></div>
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">🌡️</div><div class="t-label">Temperature</div><div class="t-value" style="color:#ccc;">—</div></div>
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">💧</div><div class="t-label">Humidity</div><div class="t-value" style="color:#ccc;">—</div></div>
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">🌤️</div><div class="t-label">Rain Sensor</div><div class="t-value" style="color:#ccc;">—</div></div>
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">⚡</div><div class="t-label">Current Draw</div><div class="t-value" style="color:#ccc;">—</div></div>
+    <div class="t-card"><div class="t-icon" style="opacity:.3;">🔌</div><div class="t-label">Motor State</div><div class="t-value" style="color:#ccc;">—</div></div>
+  `;
+
+  document.getElementById('lastSeenText').textContent = 'No data yet';
+  document.getElementById('powerStateText').innerHTML = '<i class="bi bi-power me-1"></i>Power: —';
+  document.getElementById('refreshModeText').innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Refreshes every 15s when device is loaded';
+  document.getElementById('refreshInfo').style.display = 'none';
+
+  document.getElementById('statusBannerTitle').textContent = 'Waiting for device data';
+  document.getElementById('statusBannerCopy').textContent = 'Once a device is loaded, this panel will summarize whether irrigation looks safe, what needs attention, and what changed recently.';
+  document.getElementById('statusTag').className = 'status-tag';
+  document.getElementById('statusTag').innerHTML = '<i class="bi bi-info-circle-fill"></i>Needs device';
+  document.getElementById('heroMotorStat').textContent = 'Waiting';
+  document.getElementById('heroLastSeenStat').textContent = 'No data';
+  document.getElementById('heroSignalStat').textContent = 'Load device';
+  document.getElementById('heroGuideText').textContent = 'Load your device to review live readings, check whether the motor is safe to run, and get a simple irrigation summary from the latest field telemetry.';
+  document.getElementById('hintBestTime').textContent = 'Load a device to get guidance from the latest telemetry.';
+  document.getElementById('hintSafety').textContent = 'We will flag rain or unusual flow conditions here.';
+  document.getElementById('hintRefresh').textContent = 'Auto-refresh starts after your device is loaded.';
+}
+
+async function loadDevice(silent = false) {
+  const deviceId = document.getElementById('deviceIdInput').value.trim();
+  if (!Auth.isLoggedIn()) { syncAuthUI(); return; }
+  if (!deviceId) {
+    if (!silent) showToast('warning', 'Device ID required', 'Enter your device ID, e.g. farm_1.');
+    return;
+  }
+
+  currentDevice = deviceId;
+  localStorage.setItem('iotDeviceId', deviceId);
+  document.getElementById('heroDeviceLabel').textContent = `Device: ${deviceId}`;
+
+  const btn = document.getElementById('loadDeviceBtn');
+  const refreshBtn = document.getElementById('refreshNowBtn');
+  if (!silent) {
+    btn.disabled = true;
+    refreshBtn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+  }
+
+  try {
+    const data = await api(`/api/iot/device/${encodeURIComponent(deviceId)}`);
+    updatePanel(data);
+    if (!silent) showToast('success', 'Device loaded', `Live data for ${deviceId} is ready.`);
+  } catch (err) {
+    resetPanel();
+    currentDevice = '';
+    document.getElementById('connPill').className = 'conn-pill offline';
+    document.getElementById('connPillText').textContent = 'Not found';
+    if (!silent) showToast('error', 'Device not found', err.message);
+  } finally {
+    if (!silent) {
+      btn.disabled = false;
+      refreshBtn.disabled = !currentDevice;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Load Device';
+    }
+  }
+}
+
+async function setMotor(action) {
+  const deviceId = currentDevice || document.getElementById('deviceIdInput').value.trim();
+  if (!Auth.isLoggedIn()) { openAuth(); return; }
+  if (!deviceId) { showToast('warning', 'No device loaded', 'Load a device first.'); return; }
+  if (motorCommandInFlight) { return; }
+
+  const now = Date.now();
+  if (lastMotorCommand.action === action && (now - lastMotorCommand.at) < MOTOR_COMMAND_DEBOUNCE_MS) {
+    showToast('info', 'Command already sent', `Please wait a moment before sending ${action} again.`);
+    return;
+  }
+
+  const btnOn = document.getElementById('btnMotorOn');
+  const btnOff = document.getElementById('btnMotorOff');
+  const refreshBtn = document.getElementById('refreshNowBtn');
+  motorCommandInFlight = true;
+  lastMotorCommand = { action, at: now };
+  setMotorButtonsDisabled(true);
+  refreshBtn.disabled = true;
+
+  const targetBtn = action === 'ON' ? btnOn : btnOff;
+  const origHTML = targetBtn.innerHTML;
+  targetBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  try {
+    await api('/api/iot/motor', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId, action }),
+    });
+
+    if (iotData) {
+      updatePanel({
+        ...iotData,
+        motor: action === 'ON'
+      });
+    }
+
+    showToast('success', `Motor ${action}`, `Command sent to ${deviceId}.`);
+    scheduleRefreshSequence();
+  } catch (err) {
+    showToast('error', 'Command failed', err.message);
+  } finally {
+    motorCommandInFlight = false;
+    resetMotorButtons();
+    setMotorButtonsDisabled(false);
+    refreshBtn.disabled = !currentDevice;
+    targetBtn.innerHTML = origHTML;
+  }
+}
+
+function startPolling() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(() => {
+    if (Auth.isLoggedIn() && currentDevice) loadDevice(true);
+  }, AUTO_REFRESH_MS);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('iotDeviceId') || 'farm_1';
+  const input = document.getElementById('deviceIdInput');
+  input.value = saved;
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      loadDevice();
+    }
+  });
+
+  syncAuthUI();
+
+  if (Auth.isLoggedIn()) {
+    loadDevice(true);
+    startPolling();
+  }
+});
+
+document.addEventListener('auth:changed', () => {
+  syncAuthUI();
+  if (Auth.isLoggedIn()) {
+    loadDevice(true);
+    startPolling();
+  } else {
+    resetPanel();
+    clearInterval(pollTimer);
+  }
+});
+
+setInterval(() => {
+  if (iotData?.lastSeen) {
+    const since = timeSince(iotData.lastSeen);
+    document.getElementById('lastSeenText').textContent = since ? `Last update: ${since}` : 'Last update: unknown';
+    document.getElementById('heroLastSeenStat').textContent = since || 'Unknown';
+
+    const online = isOnline(iotData.lastSeen);
+    document.getElementById('connPill').className = `conn-pill ${online ? 'online' : 'offline'}`;
+    document.getElementById('connPillText').textContent = online ? 'Online' : 'Offline';
+    updateGuidance(iotData);
+  }
+}, 10000);
+</script>
+
+{% endblock %}
